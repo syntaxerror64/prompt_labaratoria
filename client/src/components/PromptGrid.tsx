@@ -65,8 +65,8 @@ export default function PromptGrid({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {prompts.map((prompt) => (
-              <div key={prompt.id} className="prompt-card bg-card dark:bg-card rounded-xl shadow-md overflow-hidden border border-border transition-transform hover:-translate-y-1 hover:shadow-lg">
-                <div className="p-5">
+              <div key={prompt.id} className="prompt-card bg-card dark:bg-card rounded-xl shadow-md overflow-hidden border border-border transition-transform hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ height: "320px" }}>
+                <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-3">
                     <div className="bg-gold/30 dark:bg-gold/20 text-brown dark:text-gold px-2 py-1 rounded text-xs font-medium">
                       {CATEGORIES.find(c => c.id === prompt.category)?.name || prompt.category}
@@ -87,8 +87,8 @@ export default function PromptGrid({
                     </div>
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">{prompt.title}</h3>
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{prompt.content}</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-grow">{prompt.content}</p>
+                  <div className="flex flex-wrap gap-2">
                     {prompt.tags.map((tag) => (
                       <span key={tag} className="bg-muted dark:bg-muted text-brown dark:text-gold px-2 py-1 rounded-full text-xs">
                         #{tag}
@@ -96,7 +96,7 @@ export default function PromptGrid({
                     ))}
                   </div>
                 </div>
-                <div className="bg-muted dark:bg-muted px-5 py-3 flex justify-between items-center border-t border-border">
+                <div className="bg-muted dark:bg-muted px-5 py-3 flex justify-between items-center border-t border-border mt-auto">
                   <span className="text-xs text-muted-foreground">
                     Добавлено: {format(new Date(prompt.createdAt), 'dd MMM yyyy')}
                   </span>

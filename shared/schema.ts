@@ -67,3 +67,26 @@ export const updateNotionSettingsSchema = z.object({
 
 export type UpdateCredentials = z.infer<typeof updateCredentialsSchema>;
 export type UpdateNotionSettings = z.infer<typeof updateNotionSettingsSchema>;
+
+// Схема для удаленных промптов (корзина)
+export const deletedPrompts = pgTable("deleted_prompts", {
+  id: serial("id").primaryKey(),
+  originalId: integer("original_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(),
+  tags: text("tags").array().notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+  // Автоматическое удаление через 7 дней
+  expiryDate: timestamp("expiry_date").notNull(),
+});
+
+export const insertDeletedPromptSchema = createInsertSchema(deletedPrompts).omit({
+  id: true,
+  deletedAt: true,
+  expiryDate: true,
+});
+
+export type InsertDeletedPrompt = z.infer<typeof insertDeletedPromptSchema>;
+export type DeletedPrompt = typeof deletedPrompts.$inferSelect;

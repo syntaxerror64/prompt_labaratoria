@@ -21,9 +21,10 @@ export default function DeleteConfirmModal({
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/20 dark:bg-destructive/20 text-orange dark:text-orange mb-4">
               <AlertTriangle size={24} />
             </div>
-            <h2 className="text-xl font-bold text-foreground">Удалить промпт</h2>
+            <h2 className="text-xl font-bold text-foreground">Переместить в корзину</h2>
             <p className="mt-2 text-muted-foreground">
-              Вы уверены, что хотите удалить этот промпт? Это действие нельзя отменить.
+              Вы уверены, что хотите переместить этот промпт в корзину? 
+              Вы сможете восстановить его позже из корзины.
             </p>
           </div>
           
@@ -39,7 +40,7 @@ export default function DeleteConfirmModal({
               onClick={handleConfirmDelete}
               className="bg-orange hover:bg-orange/90 text-white transition-colors"
             >
-              Да, удалить
+              Переместить в корзину
             </Button>
           </div>
         </div>

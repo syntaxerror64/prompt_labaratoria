@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Settings from "@/pages/Settings";
 import Stats from "@/pages/Stats";
+import Trash from "@/pages/Trash";
 
 // Компонент защищенного маршрута
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route path="/stats" component={() => <ProtectedRoute component={Stats} />} />
+      <Route path="/trash" component={() => <ProtectedRoute component={Trash} />} />
       <Route path="/" component={() => <ProtectedRoute component={Home} />} />
       <Route component={NotFound} />
     </Switch>

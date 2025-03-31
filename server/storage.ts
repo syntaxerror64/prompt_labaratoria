@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser, prompts, type Prompt, type InsertPrompt } from "@shared/schema";
+import { users, type User, type InsertUser, prompts, type Prompt, type InsertPrompt, type DeletedPrompt } from "@shared/schema";
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -39,6 +39,13 @@ export interface IStorage {
   updatePrompt(id: number, prompt: Partial<InsertPrompt>): Promise<Prompt | undefined>;
   deletePrompt(id: number): Promise<boolean>;
   
+  // Trash (корзина) methods
+  getDeletedPrompts(): Promise<DeletedPrompt[]>;
+  moveToTrash(promptId: number): Promise<boolean>;
+  restoreFromTrash(deletedPromptId: number): Promise<boolean>;
+  deleteFromTrash(deletedPromptId: number): Promise<boolean>;
+  emptyTrash(): Promise<boolean>;
+  
   // Settings methods
   getSetting(key: string): Promise<string | undefined>;
   setSetting(key: string, value: string): Promise<void>;
@@ -48,16 +55,20 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private prompts: Map<number, Prompt>;
+  private deletedPrompts: Map<number, DeletedPrompt>;
   private settings: Map<string, string>;
   private userCurrentId: number;
   private promptCurrentId: number;
+  private deletedPromptCurrentId: number;
 
   constructor() {
     this.users = new Map();
     this.prompts = new Map();
+    this.deletedPrompts = new Map();
     this.settings = new Map();
     this.userCurrentId = 1;
     this.promptCurrentId = 1;
+    this.deletedPromptCurrentId = 1;
     
     // Инициализация дефолтных настроек
     this.settings.set('notionApiToken', process.env.NOTION_API_TOKEN || '');
@@ -197,6 +208,82 @@ export class MemStorage implements IStorage {
     // Обновляем переменные окружения (для текущей сессии)
     process.env.NOTION_API_TOKEN = apiToken;
     process.env.NOTION_DATABASE_ID = databaseId;
+  }
+  
+  // Методы для работы с корзиной
+  async getDeletedPrompts(): Promise<DeletedPrompt[]> {
+    return Array.from(this.deletedPrompts.values());
+  }
+  
+  async moveToTrash(promptId: number): Promise<boolean> {
+    const prompt = this.prompts.get(promptId);
+    if (!prompt) {
+      return false;
+    }
+    
+    const id = this.deletedPromptCurrentId++;
+    const now = new Date();
+    
+    // Срок хранения - 7 дней
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 7);
+    
+    const deletedPrompt: DeletedPrompt = {
+      id,
+      originalId: prompt.id,
+      title: prompt.title,
+      content: prompt.content,
+      category: prompt.category,
+      tags: prompt.tags,
+      createdAt: prompt.createdAt,
+      deletedAt: now,
+      expiryDate: expiryDate
+    };
+    
+    this.deletedPrompts.set(id, deletedPrompt);
+    
+    // Удаляем из основного хранилища
+    const deleted = this.prompts.delete(promptId);
+    if (deleted) {
+      this.savePrompts();
+    }
+    
+    return true;
+  }
+  
+  async restoreFromTrash(deletedPromptId: number): Promise<boolean> {
+    const deletedPrompt = this.deletedPrompts.get(deletedPromptId);
+    if (!deletedPrompt) {
+      return false;
+    }
+    
+    // Проверяем, существует ли уже промпт с исходным ID
+    const existingId = this.prompts.has(deletedPrompt.originalId) ? 
+      this.promptCurrentId++ : deletedPrompt.originalId;
+    
+    const restoredPrompt: Prompt = {
+      id: existingId,
+      title: deletedPrompt.title,
+      content: deletedPrompt.content,
+      category: deletedPrompt.category,
+      tags: deletedPrompt.tags,
+      createdAt: deletedPrompt.createdAt
+    };
+    
+    this.prompts.set(existingId, restoredPrompt);
+    this.deletedPrompts.delete(deletedPromptId);
+    this.savePrompts();
+    
+    return true;
+  }
+  
+  async deleteFromTrash(deletedPromptId: number): Promise<boolean> {
+    return this.deletedPrompts.delete(deletedPromptId);
+  }
+  
+  async emptyTrash(): Promise<boolean> {
+    this.deletedPrompts.clear();
+    return true;
   }
 }
 

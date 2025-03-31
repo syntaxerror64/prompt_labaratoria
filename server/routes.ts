@@ -309,16 +309,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Некорректный ID промпта' });
       }
       
-      const success = await storage.deletePrompt(id);
+      // Вместо прямого удаления перемещаем в корзину
+      const success = await storage.moveToTrash(id);
       
       if (!success) {
         return res.status(404).json({ message: 'Промпт не найден' });
       }
       
-      res.status(204).end();
+      res.status(200).json({ message: 'Промпт перемещен в корзину' });
     } catch (error) {
-      console.error('Error deleting prompt:', error);
-      res.status(500).json({ message: 'Ошибка удаления промпта' });
+      console.error('Error moving prompt to trash:', error);
+      res.status(500).json({ message: 'Ошибка перемещения промпта в корзину' });
+    }
+  });
+  
+  // Маршруты для корзины (Trash)
+  app.get('/api/trash', requireAuth, async (req: RequestWithSession, res: Response) => {
+    try {
+      const deletedPrompts = await storage.getDeletedPrompts();
+      res.status(200).json(deletedPrompts);
+    } catch (error) {
+      console.error('Error fetching prompts from trash:', error);
+      res.status(500).json({ message: 'Ошибка получения промптов из корзины' });
+    }
+  });
+  
+  app.post('/api/trash/:id/restore', requireAuth, async (req: RequestWithSession, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Некорректный ID удаленного промпта' });
+      }
+      
+      const restored = await storage.restoreFromTrash(id);
+      
+      if (!restored) {
+        return res.status(404).json({ message: 'Удаленный промпт не найден' });
+      }
+      
+      res.status(200).json({ message: 'Промпт успешно восстановлен из корзины' });
+    } catch (error) {
+      console.error('Error restoring prompt from trash:', error);
+      res.status(500).json({ message: 'Ошибка восстановления промпта из корзины' });
+    }
+  });
+  
+  app.delete('/api/trash/:id', requireAuth, async (req: RequestWithSession, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Некорректный ID удаленного промпта' });
+      }
+      
+      const deleted = await storage.deleteFromTrash(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: 'Удаленный промпт не найден' });
+      }
+      
+      res.status(200).json({ message: 'Промпт окончательно удален из корзины' });
+    } catch (error) {
+      console.error('Error deleting prompt from trash:', error);
+      res.status(500).json({ message: 'Ошибка удаления промпта из корзины' });
+    }
+  });
+  
+  app.delete('/api/trash', requireAuth, async (req: RequestWithSession, res: Response) => {
+    try {
+      const emptied = await storage.emptyTrash();
+      
+      if (!emptied) {
+        return res.status(500).json({ message: 'Не удалось очистить корзину' });
+      }
+      
+      res.status(200).json({ message: 'Корзина успешно очищена' });
+    } catch (error) {
+      console.error('Error emptying trash:', error);
+      res.status(500).json({ message: 'Ошибка сервера при очистке корзины' });
     }
   });
 

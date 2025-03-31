@@ -118,24 +118,25 @@ export default function Home() {
     }
   });
   
-  // Delete prompt mutation
-  const deletePromptMutation = useMutation({
+  // Move prompt to trash mutation
+  const moveToTrashMutation = useMutation({
     mutationFn: (id: number) => {
       return apiRequest('DELETE', `/api/prompts/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/prompts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trash'] });
       setIsDeleteModalOpen(false);
       setIsViewModalOpen(false);
       toast({
-        title: "Success",
-        description: "Prompt deleted successfully",
+        title: "Перемещено в корзину",
+        description: "Промпт успешно перемещен в корзину",
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: `Failed to delete prompt: ${error.message}`,
+        title: "Ошибка",
+        description: `Не удалось переместить промпт в корзину: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -167,7 +168,7 @@ export default function Home() {
   
   const handleDeletePromptConfirm = () => {
     if (currentPrompt) {
-      deletePromptMutation.mutate(currentPrompt.id);
+      moveToTrashMutation.mutate(currentPrompt.id);
     }
   };
   

@@ -15,7 +15,8 @@ import {
   X,
   Settings,
   BarChart2,
-  LogOut
+  LogOut,
+  Trash2
 } from "lucide-react";
 
 interface SidebarProps {
@@ -65,6 +66,11 @@ export default function Sidebar({
   // Переход на страницу статистики
   const goToStats = () => {
     setLocation("/stats");
+  };
+  
+  // Переход на страницу корзины
+  const goToTrash = () => {
+    setLocation("/trash");
   };
 
   return (
@@ -134,6 +140,15 @@ export default function Sidebar({
               >
                 <BarChart2 className="mr-2 h-4 w-4" />
                 <span>Статистика</span>
+              </button>
+            </li>
+            <li className="mb-1">
+              <button
+                onClick={goToTrash}
+                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-accent/50 dark:hover:bg-accent/40"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Корзина</span>
               </button>
             </li>
             <li className="mb-1">

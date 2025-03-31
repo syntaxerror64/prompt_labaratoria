@@ -1,6 +1,6 @@
 import { Client } from '@notionhq/client';
 import { IStorage } from './storage';
-import { Prompt, User, InsertPrompt, InsertUser } from '@shared/schema';
+import { Prompt, User, InsertPrompt, InsertUser, DeletedPrompt } from '@shared/schema';
 import { log } from './vite';
 
 interface NotionPrompt {
@@ -359,6 +359,86 @@ export class NotionStorage implements IStorage {
     
     // Переинициализируем базу данных со схемой
     await this.initializeDatabase();
+  }
+  
+  // Реализация методов корзины для Notion
+  // Для Notion мы храним удаленные промпты в памяти, так как в Notion
+  // архивирование страниц - это одностороннее действие
+  private deletedPrompts: Map<number, DeletedPrompt> = new Map();
+  private deletedPromptCurrentId: number = 1;
+  
+  async getDeletedPrompts(): Promise<DeletedPrompt[]> {
+    return Array.from(this.deletedPrompts.values());
+  }
+  
+  async moveToTrash(promptId: number): Promise<boolean> {
+    // Получаем промпт из Notion
+    const prompt = await this.getPrompt(promptId);
+    if (!prompt) {
+      return false;
+    }
+    
+    // Сначала архивируем в Notion
+    const deleted = await this.deletePrompt(promptId);
+    if (!deleted) {
+      return false;
+    }
+    
+    // Добавляем в локальную корзину
+    const id = this.deletedPromptCurrentId++;
+    const now = new Date();
+    
+    // Срок хранения - 7 дней
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 7);
+    
+    const deletedPrompt: DeletedPrompt = {
+      id,
+      originalId: prompt.id,
+      title: prompt.title,
+      content: prompt.content,
+      category: prompt.category,
+      tags: prompt.tags,
+      createdAt: prompt.createdAt,
+      deletedAt: now,
+      expiryDate: expiryDate
+    };
+    
+    this.deletedPrompts.set(id, deletedPrompt);
+    return true;
+  }
+  
+  async restoreFromTrash(deletedPromptId: number): Promise<boolean> {
+    const deletedPrompt = this.deletedPrompts.get(deletedPromptId);
+    if (!deletedPrompt) {
+      return false;
+    }
+    
+    // Восстанавливаем промпт в Notion, создавая новую страницу
+    try {
+      const restoredPrompt = await this.createPrompt({
+        title: deletedPrompt.title,
+        content: deletedPrompt.content,
+        category: deletedPrompt.category,
+        tags: deletedPrompt.tags
+      });
+      
+      // Удаляем из локальной корзины
+      this.deletedPrompts.delete(deletedPromptId);
+      return true;
+    } catch (error) {
+      console.error('Error restoring prompt from trash:', error);
+      return false;
+    }
+  }
+  
+  async deleteFromTrash(deletedPromptId: number): Promise<boolean> {
+    return this.deletedPrompts.delete(deletedPromptId);
+  }
+  
+  async emptyTrash(): Promise<boolean> {
+    this.deletedPrompts.clear();
+    return true;
   }
 
   // Приватное поле для хранения маппинга между числовыми ID и UUID Notion
