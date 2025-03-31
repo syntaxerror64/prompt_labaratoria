@@ -47,7 +47,7 @@ export default function Sidebar({
   onAddPrompt
 }: SidebarProps) {
   const [, setLocation] = useLocation();
-  const sidebarClass = `dark:bg-slate-900 bg-white shadow-lg w-64 h-full flex-shrink-0 fixed md:static z-10 transition-transform duration-300 ease-in-out ${
+  const sidebarClass = `bg-card dark:bg-card border-r border-border shadow-lg w-64 h-full flex-shrink-0 fixed md:static z-10 transition-transform duration-300 ease-in-out ${
     isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
   }`;
 
@@ -71,23 +71,21 @@ export default function Sidebar({
     <div className={sidebarClass}>
       <div className="p-4 flex flex-col h-full">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#987654] dark:text-[#ECD06F] flex items-center">
+          <h1 className="text-2xl font-bold text-brown dark:text-gold flex items-center">
             <span className="mr-2">💬</span>
             <span>ПромптМастер</span>
           </h1>
-          <button onClick={toggleSidebar} className="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Переключатель темы */}
-        <div className="mb-6 flex justify-end">
-          <ThemeToggle />
+          <div className="flex items-center">
+            <ThemeToggle />
+            <button onClick={toggleSidebar} className="ml-2 md:hidden text-muted-foreground hover:text-foreground">
+              <X size={20} />
+            </button>
+          </div>
         </div>
         
         {/* Categories Navigation */}
         <nav className="mb-6">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold mb-3">Категории</h2>
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Категории</h2>
           <ul>
             {CATEGORIES.map((category) => {
               const IconComponent = iconMap[category.icon];
@@ -97,8 +95,8 @@ export default function Sidebar({
                     onClick={() => setCategory(category.id)}
                     className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center ${
                       categories === category.id
-                        ? "bg-[#f2e0a0] text-[#987654] dark:bg-[#ECD06F]/20 dark:text-[#ECD06F]"
-                        : "hover:bg-[#f2e0a0]/50 hover:text-[#987654] dark:hover:bg-[#ECD06F]/10 dark:hover:text-[#ECD06F]"
+                        ? "bg-accent text-accent-foreground dark:bg-accent dark:text-accent-foreground"
+                        : "hover:bg-accent/50 hover:text-accent-foreground dark:hover:bg-accent/40 dark:hover:text-accent-foreground"
                     }`}
                   >
                     <IconComponent className="mr-2 h-4 w-4" />
@@ -112,13 +110,13 @@ export default function Sidebar({
         
         {/* Popular Tags */}
         <div className="mb-6">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold mb-3">Популярные теги</h2>
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Популярные теги</h2>
           <div className="flex flex-wrap gap-2">
             {popularTags.map((tag) => (
               <button
                 key={tag}
                 onClick={() => onTagClick(tag)}
-                className="bg-gray-100 dark:bg-gray-800 text-[#987654] dark:text-[#ECD06F] px-3 py-1 rounded-full text-sm hover:bg-[#ECD06F]/30 dark:hover:bg-[#ECD06F]/20 transition-colors"
+                className="bg-muted dark:bg-muted text-secondary dark:text-gold px-3 py-1 rounded-full text-sm hover:bg-primary/20 dark:hover:bg-primary/20 transition-colors"
               >
                 #{tag}
               </button>
@@ -130,12 +128,12 @@ export default function Sidebar({
 
         {/* Navigation Links */}
         <nav className="mb-auto">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold mb-3">Навигация</h2>
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Навигация</h2>
           <ul>
             <li className="mb-1">
               <button
                 onClick={goToStats}
-                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-[#f2e0a0]/50 hover:text-[#987654] dark:hover:bg-[#ECD06F]/10 dark:hover:text-[#ECD06F]"
+                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-accent/50 dark:hover:bg-accent/40"
               >
                 <BarChart2 className="mr-2 h-4 w-4" />
                 <span>Статистика</span>
@@ -144,7 +142,7 @@ export default function Sidebar({
             <li className="mb-1">
               <button
                 onClick={goToSettings}
-                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-[#f2e0a0]/50 hover:text-[#987654] dark:hover:bg-[#ECD06F]/10 dark:hover:text-[#ECD06F]"
+                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-accent/50 dark:hover:bg-accent/40"
               >
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Настройки</span>
@@ -153,7 +151,7 @@ export default function Sidebar({
             <li className="mb-1">
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20 dark:hover:text-destructive-foreground"
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Выйти</span>
@@ -165,7 +163,7 @@ export default function Sidebar({
         {/* Add New Prompt Button */}
         <Button 
           onClick={onAddPrompt}
-          className="mt-4 bg-[#DF6C4F] hover:bg-[#e8836a] text-white flex items-center justify-center transition-colors"
+          className="mt-4 bg-orange hover:bg-orange/80 text-white flex items-center justify-center transition-colors"
         >
           <Plus className="mr-2 h-4 w-4" />
           <span>Добавить промпт</span>

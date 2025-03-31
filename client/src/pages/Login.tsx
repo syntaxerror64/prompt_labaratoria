@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import ThemeToggle from "@/components/ThemeToggle";
 
 // Определяем схему валидации для формы
 const loginSchema = z.object({
@@ -57,13 +58,16 @@ export default function Login() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      <Card className="w-full max-w-md shadow-lg border-border">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center text-[#987654]">
-            PromptMaster
+          <CardTitle className="text-2xl font-bold text-center text-brown dark:text-gold">
+            ПромптМастер
           </CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-muted-foreground">
             Введите ваши учетные данные для входа в систему
           </CardDescription>
         </CardHeader>
@@ -75,12 +79,13 @@ export default function Login() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Имя пользователя</FormLabel>
+                    <FormLabel className="text-foreground">Имя пользователя</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Введите имя пользователя" 
                         {...field} 
                         disabled={isLoading}
+                        className="border-input focus-visible:ring-primary"
                       />
                     </FormControl>
                     <FormMessage />
@@ -92,13 +97,14 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Пароль</FormLabel>
+                    <FormLabel className="text-foreground">Пароль</FormLabel>
                     <FormControl>
                       <Input 
                         type="password" 
                         placeholder="Введите пароль" 
                         {...field} 
                         disabled={isLoading}
+                        className="border-input focus-visible:ring-primary"
                       />
                     </FormControl>
                     <FormMessage />
@@ -107,7 +113,7 @@ export default function Login() {
               />
               <Button 
                 type="submit" 
-                className="w-full bg-[#DF6C4F] hover:bg-[#c85c41]" 
+                className="w-full bg-orange hover:bg-orange/90 text-white" 
                 disabled={isLoading}
               >
                 {isLoading ? "Вход..." : "Войти"}
@@ -116,7 +122,7 @@ export default function Login() {
           </Form>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Для доступа используйте: admin / admin
           </p>
         </CardFooter>

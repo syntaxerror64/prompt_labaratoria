@@ -36,9 +36,9 @@ export default function ThemeToggle() {
       title={theme === "light" ? "Переключить на темную тему" : "Переключить на светлую тему"}
     >
       {theme === "light" ? (
-        <Moon className="h-5 w-5 text-[#987654]" />
+        <Moon className="h-5 w-5 text-brown hover:text-orange transition-colors" />
       ) : (
-        <Sun className="h-5 w-5 text-[#ECD06F]" />
+        <Sun className="h-5 w-5 text-gold hover:text-primary/90 transition-colors" />
       )}
     </Button>
   );
