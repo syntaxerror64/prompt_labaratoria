@@ -2,6 +2,8 @@ import { users, type User, type InsertUser, prompts, type Prompt, type InsertPro
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { log } from './vite';
+import { NotionStorage } from './notionStorage';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,6 +59,10 @@ export class MemStorage implements IStorage {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
       if (Array.isArray(data.prompts)) {
         data.prompts.forEach((prompt: Prompt) => {
+          // Убедимся, что createdAt - это объект Date
+          if (typeof prompt.createdAt === 'string') {
+            prompt.createdAt = new Date(prompt.createdAt);
+          }
           this.prompts.set(prompt.id, prompt);
           // Update current ID to be greater than the highest ID in the file
           if (prompt.id >= this.promptCurrentId) {
@@ -145,4 +151,22 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Выбираем хранилище в зависимости от настроек окружения
+let storage: IStorage;
+
+try {
+  // Проверяем наличие переменных окружения для Notion
+  if (process.env.NOTION_API_TOKEN && process.env.NOTION_DATABASE_ID) {
+    log('Using Notion storage for prompts', 'storage');
+    storage = new NotionStorage();
+  } else {
+    log('Using memory storage for prompts', 'storage');
+    storage = new MemStorage();
+  }
+} catch (error) {
+  console.error('Error initializing Notion storage:', error);
+  log('Fallback to memory storage due to Notion initialization error', 'storage');
+  storage = new MemStorage();
+}
+
+export { storage };
