@@ -2,6 +2,8 @@ import { Client } from '@notionhq/client';
 import { IStorage } from './storage';
 import { Prompt, User, InsertPrompt, InsertUser, DeletedPrompt } from '@shared/schema';
 import { log } from './vite';
+import session from 'express-session';
+import createMemoryStore from "memorystore";
 
 interface NotionPrompt {
   id: string;
@@ -19,8 +21,20 @@ export class NotionStorage implements IStorage {
   private databaseId: string;
   private users: Map<number, User>;
   private userCurrentId: number;
+  private settingsCache: Map<string, string> = new Map();
+  private deletedPrompts: Map<number, DeletedPrompt> = new Map();
+  private deletedPromptCurrentId: number = 1;
+  private idMapping: Map<number, string> = new Map();
+  private nextId: number = 1;
+  public sessionStore: session.Store;
 
   constructor() {
+    // Создаем хранилище сессий в памяти
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // очищает просроченные сессии каждые 24 часа
+    });
+
     // Создаем клиент Notion API
     const apiKey = process.env.NOTION_API_TOKEN;
     const databaseId = process.env.NOTION_DATABASE_ID;
@@ -35,7 +49,6 @@ export class NotionStorage implements IStorage {
     this.userCurrentId = 1;
     
     // Инициализируем кэш настроек
-    this.settingsCache = new Map();
     this.settingsCache.set('notionApiToken', apiKey);
     this.settingsCache.set('notionDatabaseId', databaseId);
 
@@ -334,8 +347,6 @@ export class NotionStorage implements IStorage {
   }
   
   // Settings methods
-  private settingsCache: Map<string, string> = new Map();
-  
   async getSetting(key: string): Promise<string | undefined> {
     return this.settingsCache.get(key) || undefined;
   }
@@ -364,9 +375,6 @@ export class NotionStorage implements IStorage {
   // Реализация методов корзины для Notion
   // Для Notion мы храним удаленные промпты в памяти, так как в Notion
   // архивирование страниц - это одностороннее действие
-  private deletedPrompts: Map<number, DeletedPrompt> = new Map();
-  private deletedPromptCurrentId: number = 1;
-  
   async getDeletedPrompts(): Promise<DeletedPrompt[]> {
     return Array.from(this.deletedPrompts.values());
   }
@@ -441,10 +449,6 @@ export class NotionStorage implements IStorage {
     return true;
   }
 
-  // Приватное поле для хранения маппинга между числовыми ID и UUID Notion
-  private idMapping: Map<number, string> = new Map();
-  private nextId: number = 1;
-
   // Вспомогательный метод для преобразования страницы Notion в формат нашего приложения
   private mapNotionPageToPrompt(notionPage: any): Prompt {
     const properties = notionPage.properties;
@@ -471,8 +475,6 @@ export class NotionStorage implements IStorage {
     // Получаем заголовок из свойства title
     let title = 'Untitled';
     try {
-      console.log('Original properties from Notion:', JSON.stringify(properties));
-      
       // Проверяем разные форматы для поля title в Notion
       if (properties.title) {
         // Проверка на основные форматы
@@ -484,7 +486,6 @@ export class NotionStorage implements IStorage {
           
           if (titleTexts.length > 0) {
             title = titleTexts.join('');
-            console.log('Extracted title from title.title array:', title);
           }
         } else if (properties.title.rich_text) {
           // Альтернативный формат с rich_text
@@ -494,12 +495,10 @@ export class NotionStorage implements IStorage {
           
           if (titleTexts.length > 0) {
             title = titleTexts.join('');
-            console.log('Extracted title from title.rich_text array:', title);
           }
         } else if (typeof properties.title === 'string') {
           // Прямое строковое значение
           title = properties.title;
-          console.log('Using direct string title:', title);
         }
       } else if (properties.Name) {
         // Fallback для Notion, который иногда использует "Name" вместо "title"
@@ -510,28 +509,60 @@ export class NotionStorage implements IStorage {
           
           if (titleTexts.length > 0) {
             title = titleTexts.join('');
-            console.log('Extracted title from Name.title array:', title);
           }
         }
       }
-      
-      console.log('Final mapped title:', title);
     } catch (error) {
       console.error('Error parsing title from Notion:', error);
     }
     
-    // Получаем содержимое (может не быть, если поле только что создано)
-    const content = properties.content?.rich_text?.map((t: any) => t.plain_text).join('') || '';
+    // Получаем контент из свойства content
+    let content = '';
+    try {
+      if (properties.content && properties.content.rich_text) {
+        const contentTexts = properties.content.rich_text
+          .filter((t: any) => t && t.text && t.text.content)
+          .map((t: any) => t.text.content);
+        
+        if (contentTexts.length > 0) {
+          content = contentTexts.join('\n');
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing content from Notion:', error);
+    }
     
-    // Получаем категорию
-    const category = properties.category?.select?.name || 'other';
+    // Получаем категорию из свойства category
+    let category = 'other';
+    try {
+      if (properties.category && properties.category.select && properties.category.select.name) {
+        category = properties.category.select.name;
+      }
+    } catch (error) {
+      console.error('Error parsing category from Notion:', error);
+    }
     
-    // Получаем теги
-    const tags = properties.tags?.multi_select?.map((tag: any) => tag.name) || [];
+    // Получаем теги из свойства tags
+    let tags: string[] = [];
+    try {
+      if (properties.tags && properties.tags.multi_select) {
+        tags = properties.tags.multi_select
+          .filter((t: any) => t && t.name)
+          .map((t: any) => t.name);
+      }
+    } catch (error) {
+      console.error('Error parsing tags from Notion:', error);
+    }
     
-    // Получаем дату создания
-    const createdAtStr = properties.createdAt?.date?.start;
-    const createdAt = createdAtStr ? new Date(createdAtStr) : new Date();
+    // Получаем дату создания из свойства createdAt
+    let createdAt = new Date();
+    try {
+      if (properties.createdAt && properties.createdAt.date && properties.createdAt.date.start) {
+        createdAt = new Date(properties.createdAt.date.start);
+      }
+    } catch (error) {
+      console.error('Error parsing createdAt from Notion:', error);
+    }
     
     return {
       id: numericId,

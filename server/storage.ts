@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { log } from './vite';
 import { NotionStorage } from './notionStorage';
+import session from 'express-session';
+import createMemoryStore from "memorystore";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +52,9 @@ export interface IStorage {
   getSetting(key: string): Promise<string | undefined>;
   setSetting(key: string, value: string): Promise<void>;
   updateNotionSettings(apiToken: string, databaseId: string): Promise<void>;
+  
+  // Session store
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
@@ -60,6 +65,7 @@ export class MemStorage implements IStorage {
   private userCurrentId: number;
   private promptCurrentId: number;
   private deletedPromptCurrentId: number;
+  public sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
@@ -70,12 +76,34 @@ export class MemStorage implements IStorage {
     this.promptCurrentId = 1;
     this.deletedPromptCurrentId = 1;
     
+    // Создаем хранилище сессий в памяти
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // очищает просроченные сессии каждые 24 часа
+    });
+    
     // Инициализация дефолтных настроек
     this.settings.set('notionApiToken', process.env.NOTION_API_TOKEN || '');
     this.settings.set('notionDatabaseId', process.env.NOTION_DATABASE_ID || '');
     
+    // Создаем тестового пользователя admin/admin если у нас нет пользователей
+    this.createDefaultAdminUser();
+    
     // Load prompts from JSON file
     this.loadPrompts();
+  }
+  
+  private async createDefaultAdminUser() {
+    // Проверим, есть ли у нас пользователь admin
+    const adminUser = await this.getUserByUsername('admin');
+    if (!adminUser) {
+      // Создаем администратора
+      await this.createUser({
+        username: 'admin',
+        password: 'admin'
+      });
+      log('Created default admin user', 'storage');
+    }
   }
   
   private loadPrompts() {

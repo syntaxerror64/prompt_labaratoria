@@ -1,19 +1,11 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPromptSchema, insertUserSchema, updateCredentialsSchema, updateNotionSettingsSchema } from "@shared/schema";
-import { z } from "zod";
+import { insertPromptSchema, updateCredentialsSchema, updateNotionSettingsSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { setupAuth } from "./auth";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import session from "express-session";
-
-// Расширяем типы для Express
-interface RequestWithSession extends Request {
-  session: session.Session & {
-    userId?: number;
-  }
-}
 
 // Вспомогательные функции для хеширования паролей
 const scryptAsync = promisify(scrypt);
@@ -32,92 +24,19 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Настройка аутентификации с Passport.js
+  setupAuth(app);
+  
   // Middleware для проверки аутентификации
-  function requireAuth(req: RequestWithSession, res: Response, next: NextFunction) {
-    if (req.session.userId) {
+  function requireAuth(req: Request, res: Response, next: NextFunction) {
+    if (req.isAuthenticated()) {
       return next();
     }
     return res.status(401).json({ message: 'Требуется авторизация' });
   }
   
-  // API маршруты для аутентификации
-  app.post('/api/login', async (req: RequestWithSession, res: Response) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Необходимо указать имя пользователя и пароль' });
-      }
-      
-      const user = await storage.getUserByUsername(username);
-      
-      if (!user) {
-        return res.status(401).json({ message: 'Неверное имя пользователя или пароль' });
-      }
-      
-      // Проверяем пароль, используя сравнение хешей если пароль выглядит как хеш
-      let passwordMatch = false;
-      
-      if (user.password.includes('.')) {
-        // Это хешированный пароль
-        passwordMatch = await comparePasswords(password, user.password);
-      } else {
-        // Простое сравнение для тестовых/демо-паролей
-        passwordMatch = password === user.password;
-      }
-      
-      if (!passwordMatch) {
-        return res.status(401).json({ message: 'Неверное имя пользователя или пароль' });
-      }
-      
-      // Устанавливаем сессию пользователя
-      req.session.userId = user.id;
-      
-      // Возвращаем только безопасные данные пользователя (без пароля)
-      res.json({
-        id: user.id,
-        username: user.username
-      });
-    } catch (error) {
-      console.error('Error during login:', error);
-      res.status(500).json({ message: 'Ошибка авторизации' });
-    }
-  });
-  
-  app.post('/api/logout', (req: RequestWithSession, res: Response) => {
-    req.session.destroy(err => {
-      if (err) {
-        return res.status(500).json({ message: 'Ошибка при выходе из системы' });
-      }
-      res.status(200).json({ message: 'Успешный выход из системы' });
-    });
-  });
-  
-  app.get('/api/user', (req: RequestWithSession, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: 'Пользователь не авторизован' });
-    }
-    
-    storage.getUser(req.session.userId)
-      .then(user => {
-        if (!user) {
-          return res.status(404).json({ message: 'Пользователь не найден' });
-        }
-        
-        // Возвращаем только безопасные данные пользователя (без пароля)
-        res.json({
-          id: user.id,
-          username: user.username
-        });
-      })
-      .catch(error => {
-        console.error('Error fetching user:', error);
-        res.status(500).json({ message: 'Ошибка получения данных пользователя' });
-      });
-  });
-  
   // API маршруты для настроек
-  app.get('/api/settings/:key', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.get('/api/settings/:key', requireAuth, async (req: Request, res: Response) => {
     try {
       const key = req.params.key;
       const value = await storage.getSetting(key);
@@ -133,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/settings/:key', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.post('/api/settings/:key', requireAuth, async (req: Request, res: Response) => {
     try {
       const { key } = req.params;
       const { value } = req.body;
@@ -151,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API маршрут для обновления учетных данных
-  app.post('/api/update-credentials', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.post('/api/update-credentials', requireAuth, async (req: Request, res: Response) => {
     try {
       const result = updateCredentialsSchema.safeParse(req.body);
       
@@ -161,7 +80,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { username, currentPassword, newPassword } = result.data;
-      const userId = req.session.userId!;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'Пользователь не авторизован' });
+      }
       
       // Получаем текущего пользователя
       const user = await storage.getUser(userId);
@@ -203,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API маршрут для обновления настроек Notion
-  app.post('/api/update-notion-settings', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.post('/api/update-notion-settings', requireAuth, async (req: Request, res: Response) => {
     try {
       const result = updateNotionSettingsSchema.safeParse(req.body);
       
@@ -225,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API маршруты для управления промптами (с проверкой аутентификации)
-  app.get('/api/prompts', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.get('/api/prompts', requireAuth, async (req: Request, res: Response) => {
     try {
       const prompts = await storage.getPrompts();
       res.json(prompts);
@@ -235,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/prompts/:id', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.get('/api/prompts/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -256,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/prompts', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.post('/api/prompts', requireAuth, async (req: Request, res: Response) => {
     try {
       const result = insertPromptSchema.safeParse(req.body);
       
@@ -273,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put('/api/prompts/:id', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.put('/api/prompts/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -301,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete('/api/prompts/:id', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.delete('/api/prompts/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -324,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Маршруты для корзины (Trash)
-  app.get('/api/trash', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.get('/api/trash', requireAuth, async (req: Request, res: Response) => {
     try {
       const deletedPrompts = await storage.getDeletedPrompts();
       res.status(200).json(deletedPrompts);
@@ -334,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/trash/:id/restore', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.post('/api/trash/:id/restore', requireAuth, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -355,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete('/api/trash/:id', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.delete('/api/trash/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -376,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete('/api/trash', requireAuth, async (req: RequestWithSession, res: Response) => {
+  app.delete('/api/trash', requireAuth, async (req: Request, res: Response) => {
     try {
       const emptied = await storage.emptyTrash();
       
