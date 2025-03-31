@@ -35,6 +35,71 @@ export class NotionStorage implements IStorage {
     this.userCurrentId = 1;
 
     log('NotionStorage initialized with database ID: ' + this.databaseId, 'notion');
+    
+    // Инициализируем схему базы данных
+    this.initializeDatabase();
+  }
+  
+  // Метод для инициализации схемы в базе данных Notion
+  private async initializeDatabase() {
+    try {
+      // Получаем текущую схему базы данных
+      const database = await this.notionClient.databases.retrieve({
+        database_id: this.databaseId
+      });
+      
+      log('Retrieved Notion database', 'notion');
+      
+      // Проверяем наличие необходимых свойств и создаем их при необходимости
+      const properties = database.properties;
+      const requiredProperties = {
+        content: { rich_text: {} },
+        category: { select: {
+          options: [
+            { name: 'creative', color: 'blue' },
+            { name: 'academic', color: 'green' },
+            { name: 'business', color: 'orange' },
+            { name: 'technical', color: 'gray' },
+            { name: 'other', color: 'default' }
+          ]
+        }},
+        tags: { multi_select: {
+          options: [
+            { name: 'gpt', color: 'green' },
+            { name: 'writing', color: 'blue' },
+            { name: 'code', color: 'gray' },
+            { name: 'business', color: 'orange' },
+            { name: 'academic', color: 'red' }
+          ]
+        }},
+        createdAt: { date: {} }
+      };
+      
+      // Собираем недостающие свойства
+      const missingProperties: Record<string, any> = {};
+      
+      Object.entries(requiredProperties).forEach(([key, value]) => {
+        if (!properties[key]) {
+          missingProperties[key] = value;
+        }
+      });
+      
+      // Если есть недостающие свойства, обновляем базу данных
+      if (Object.keys(missingProperties).length > 0) {
+        log('Updating Notion database schema with missing properties: ' + Object.keys(missingProperties).join(', '), 'notion');
+        
+        await this.notionClient.databases.update({
+          database_id: this.databaseId,
+          properties: missingProperties
+        });
+        
+        log('Notion database schema updated successfully', 'notion');
+      } else {
+        log('Notion database schema is up-to-date', 'notion');
+      }
+    } catch (error) {
+      console.error('Error initializing Notion database schema:', error);
+    }
   }
 
   // User methods (используем in-memory хранение для пользователей)
@@ -56,9 +121,9 @@ export class NotionStorage implements IStorage {
   // Prompt methods (используем Notion API)
   async getPrompts(): Promise<Prompt[]> {
     try {
+      // Запрос без сортировки, так как поле может не существовать
       const response = await this.notionClient.databases.query({
-        database_id: this.databaseId,
-        sorts: [{ property: 'createdAt', direction: 'descending' }]
+        database_id: this.databaseId
       });
 
       return response.results.map((page: any) => this.mapNotionPageToPrompt(page));
@@ -201,20 +266,20 @@ export class NotionStorage implements IStorage {
     // Получаем ID и преобразуем его в числовой формат для совместимости
     const id = parseInt(notionPage.id.replace(/-/g, '').substring(0, 8), 16);
     
-    // Получаем заголовок
-    const title = properties.title.title.map((t: any) => t.plain_text).join('');
+    // Получаем заголовок (это поле всегда есть в Notion)
+    const title = properties.title?.title?.map((t: any) => t.plain_text).join('') || 'Untitled';
     
-    // Получаем содержимое
-    const content = properties.content.rich_text.map((t: any) => t.plain_text).join('');
+    // Получаем содержимое (может не быть, если поле только что создано)
+    const content = properties.content?.rich_text?.map((t: any) => t.plain_text).join('') || '';
     
     // Получаем категорию
-    const category = properties.category.select?.name || 'other';
+    const category = properties.category?.select?.name || 'other';
     
     // Получаем теги
-    const tags = properties.tags.multi_select.map((tag: any) => tag.name);
+    const tags = properties.tags?.multi_select?.map((tag: any) => tag.name) || [];
     
     // Получаем дату создания
-    const createdAtStr = properties.createdAt.date?.start;
+    const createdAtStr = properties.createdAt?.date?.start;
     const createdAt = createdAtStr ? new Date(createdAtStr) : new Date();
     
     return {

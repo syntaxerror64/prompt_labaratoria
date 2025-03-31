@@ -50,7 +50,7 @@ export default function Sidebar({
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-[#987654] flex items-center">
             <span className="mr-2">💬</span>
-            <span>PromptMaster</span>
+            <span>ПромптМастер</span>
           </h1>
           <button onClick={toggleSidebar} className="md:hidden text-gray-500 hover:text-gray-700">
             <X size={20} />
@@ -59,7 +59,7 @@ export default function Sidebar({
         
         {/* Categories Navigation */}
         <nav className="mb-8">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-4">Categories</h2>
+          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-4">Категории</h2>
           <ul>
             {CATEGORIES.map((category) => {
               const IconComponent = iconMap[category.icon];
@@ -84,7 +84,7 @@ export default function Sidebar({
         
         {/* Popular Tags */}
         <div className="mb-auto">
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-4">Popular Tags</h2>
+          <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-4">Популярные теги</h2>
           <div className="flex flex-wrap gap-2">
             {popularTags.map((tag) => (
               <button
@@ -104,7 +104,7 @@ export default function Sidebar({
           className="mt-4 bg-[#DF6C4F] hover:bg-[#e8836a] text-white flex items-center justify-center transition-colors"
         >
           <Plus className="mr-2 h-4 w-4" />
-          <span>Add New Prompt</span>
+          <span>Добавить промпт</span>
         </Button>
       </div>
     </div>

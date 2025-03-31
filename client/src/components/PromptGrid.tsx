@@ -21,7 +21,7 @@ export default function PromptGrid({
   handleDeletePrompt,
   handleViewPrompt
 }: PromptGridProps) {
-  const activeCategoryName = CATEGORIES.find(c => c.id === activeCategory)?.name || "All Prompts";
+  const activeCategoryName = CATEGORIES.find(c => c.id === activeCategory)?.name || "Все промпты";
   
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
@@ -59,8 +59,8 @@ export default function PromptGrid({
           </div>
         ) : prompts.length === 0 ? (
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-600 mb-2">No prompts found</h3>
-            <p className="text-gray-500">Try changing your search or filters, or add a new prompt.</p>
+            <h3 className="text-lg font-medium text-gray-600 mb-2">Промпты не найдены</h3>
+            <p className="text-gray-500">Попробуйте изменить параметры поиска или фильтры, или добавьте новый промпт.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -98,13 +98,13 @@ export default function PromptGrid({
                 </div>
                 <div className="bg-gray-50 px-5 py-3 flex justify-between items-center border-t border-gray-200">
                   <span className="text-xs text-gray-500">
-                    Added: {format(new Date(prompt.createdAt), 'dd MMM yyyy')}
+                    Добавлено: {format(new Date(prompt.createdAt), 'dd MMM yyyy')}
                   </span>
                   <button
                     className="text-[#DF6C4F] hover:text-[#e8836a] font-medium text-sm"
                     onClick={() => handleViewPrompt(prompt)}
                   >
-                    View Details
+                    Подробнее
                   </button>
                 </div>
               </div>

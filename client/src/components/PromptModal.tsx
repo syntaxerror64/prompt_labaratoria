@@ -23,9 +23,9 @@ interface PromptModalProps {
 
 // Extend the schema with better validation
 const formSchema = insertPromptSchema.extend({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters"),
-  tags: z.array(z.string()).min(1, "Add at least one tag"),
+  title: z.string().min(3, "Название должно содержать не менее 3 символов"),
+  content: z.string().min(10, "Содержание должно содержать не менее 10 символов"),
+  tags: z.array(z.string()).min(1, "Добавьте хотя бы один тег"),
 });
 
 export default function PromptModal({
@@ -96,7 +96,7 @@ export default function PromptModal({
       <DialogContent className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-800">
-            {isEditing ? "Edit Prompt" : "Add New Prompt"}
+            {isEditing ? "Редактировать промпт" : "Добавить новый промпт"}
           </DialogTitle>
         </DialogHeader>
         
@@ -107,10 +107,10 @@ export default function PromptModal({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Prompt Title</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Название промпта</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter a descriptive title"
+                      placeholder="Введите название промпта"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                       {...field}
                     />
@@ -125,7 +125,7 @@ export default function PromptModal({
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Category</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Категория</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -133,7 +133,7 @@ export default function PromptModal({
                   >
                     <FormControl>
                       <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Выберите категорию" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -154,10 +154,10 @@ export default function PromptModal({
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Prompt Content</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Содержание промпта</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Write your prompt here. Use [placeholders] for variable content."
+                      placeholder="Напишите содержание промпта. Используйте [заполнители] для переменного контента."
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                       rows={6}
                       {...field}
@@ -173,10 +173,10 @@ export default function PromptModal({
               name="tags"
               render={() => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Tags</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Теги</FormLabel>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Add a tag and press Enter"
+                      placeholder="Добавьте тег и нажмите Enter"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -188,7 +188,7 @@ export default function PromptModal({
                       className="flex-1"
                     />
                     <Button type="button" onClick={addTag} variant="outline">
-                      Add
+                      Добавить
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2">
@@ -222,13 +222,13 @@ export default function PromptModal({
                 onClick={closeModal}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                Отмена
               </Button>
               <Button
                 type="submit"
                 className="px-4 py-2 bg-[#DF6C4F] hover:bg-[#e8836a] text-white rounded-lg transition-colors"
               >
-                Save Prompt
+                Сохранить промпт
               </Button>
             </div>
           </form>

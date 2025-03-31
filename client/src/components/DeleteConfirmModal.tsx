@@ -21,9 +21,9 @@ export default function DeleteConfirmModal({
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-[#DF6C4F] mb-4">
               <AlertTriangle size={24} />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">Delete Prompt</h2>
+            <h2 className="text-xl font-bold text-gray-800">Удалить промпт</h2>
             <p className="mt-2 text-gray-600">
-              Are you sure you want to delete this prompt? This action cannot be undone.
+              Вы уверены, что хотите удалить этот промпт? Это действие нельзя отменить.
             </p>
           </div>
           
@@ -33,13 +33,13 @@ export default function DeleteConfirmModal({
               onClick={closeModal}
               className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             >
-              Cancel
+              Отмена
             </Button>
             <Button
               onClick={handleConfirmDelete}
               className="px-4 py-2 bg-[#DF6C4F] hover:bg-[#e8836a] text-white rounded-lg transition-colors"
             >
-              Yes, Delete
+              Да, удалить
             </Button>
           </div>
         </div>

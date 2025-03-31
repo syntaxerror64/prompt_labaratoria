@@ -50,14 +50,14 @@ export default function ViewPromptModal({
           </div>
           
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-1">Prompt</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-1">Содержание промпта</h3>
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
               <p className="text-gray-800">{prompt.content}</p>
             </div>
           </div>
           
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-1">Tags</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-1">Теги</h3>
             <div className="flex flex-wrap gap-2">
               {prompt.tags.map((tag) => (
                 <span key={tag} className="bg-gray-100 text-[#987654] px-2 py-1 rounded-full text-sm">
@@ -69,7 +69,7 @@ export default function ViewPromptModal({
           
           <div className="flex items-center text-sm text-gray-500">
             <Calendar className="mr-2" size={16} />
-            <span>Added: {format(new Date(prompt.createdAt), 'dd MMM yyyy')}</span>
+            <span>Добавлено: {format(new Date(prompt.createdAt), 'dd MMM yyyy')}</span>
           </div>
         </div>
         
@@ -82,12 +82,12 @@ export default function ViewPromptModal({
             {copied ? (
               <>
                 <Check className="mr-2" size={16} />
-                Copied!
+                Скопировано!
               </>
             ) : (
               <>
                 <Copy className="mr-2" size={16} />
-                Copy Prompt
+                Копировать промпт
               </>
             )}
           </Button>
@@ -99,14 +99,14 @@ export default function ViewPromptModal({
               className="px-4 py-2 border border-[#987654] text-[#987654] rounded-lg hover:bg-[#987654] hover:text-white transition-colors"
             >
               <Edit className="mr-2" size={16} />
-              Edit
+              Редактировать
             </Button>
             <Button
               onClick={onDelete}
               className="px-4 py-2 bg-[#DF6C4F] text-white rounded-lg hover:bg-[#e8836a] transition-colors"
             >
               <Trash2 className="mr-2" size={16} />
-              Delete
+              Удалить
             </Button>
           </div>
         </div>

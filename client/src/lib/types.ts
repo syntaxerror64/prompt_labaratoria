@@ -9,12 +9,12 @@ export type CategoryInfo = {
 };
 
 export const CATEGORIES: CategoryInfo[] = [
-  { id: "all", name: "All Prompts", icon: "globe" },
-  { id: "creative", name: "Creative Writing", icon: "paint-brush" },
-  { id: "academic", name: "Academic", icon: "graduation-cap" },
-  { id: "business", name: "Business", icon: "briefcase" },
-  { id: "technical", name: "Technical", icon: "code" },
-  { id: "other", name: "Other", icon: "ellipsis-h" }
+  { id: "all", name: "Все промпты", icon: "globe" },
+  { id: "creative", name: "Творческое письмо", icon: "paint-brush" },
+  { id: "academic", name: "Учебные", icon: "graduation-cap" },
+  { id: "business", name: "Бизнес", icon: "briefcase" },
+  { id: "technical", name: "Технические", icon: "code" },
+  { id: "other", name: "Другое", icon: "ellipsis-h" }
 ];
 
 export interface PromptWithDateString extends Omit<Prompt, 'createdAt'> {

@@ -43,7 +43,7 @@ export default function SearchFilters({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <Input
               type="text"
-              placeholder="Search prompts..."
+              placeholder="Поиск промптов..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ECD06F] focus:border-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -56,7 +56,7 @@ export default function SearchFilters({
                 className="w-full flex items-center justify-between bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50"
                 onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
               >
-                <span>Filter by Tags</span>
+                <span>Фильтр по тегам</span>
                 <ChevronDown className="ml-2 text-gray-500" size={16} />
               </Button>
               {tagDropdownOpen && (
