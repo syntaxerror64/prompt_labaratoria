@@ -90,12 +90,8 @@ export default function PromptGrid({
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">{prompt.title}</h3>
                   <div className="prompt-content relative flex-grow mb-4">
-                    <p className="text-muted-foreground text-sm line-clamp-3">{prompt.content}</p>
-                    <div className="absolute bottom-0 right-0 left-0 h-6 bg-gradient-to-t from-card to-transparent"></div>
-                    <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-16 flex justify-center">
-                      <div className="w-10 h-1 bg-muted rounded-full relative overflow-hidden">
-                        <div className="w-2 h-1 bg-orange absolute left-1 rounded-full"></div>
-                      </div>
+                    <div className="max-h-[100px] overflow-y-auto custom-scrollbar pr-1">
+                      <p className="text-muted-foreground text-sm">{prompt.content}</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
