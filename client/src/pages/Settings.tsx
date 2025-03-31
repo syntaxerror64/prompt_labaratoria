@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 // Схема для добавления новой категории
@@ -42,6 +43,7 @@ export default function Settings() {
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [promptCardHeight, setPromptCardHeight] = useState<number>(320);
 
   // Проверка авторизации
   useEffect(() => {
@@ -61,6 +63,11 @@ export default function Settings() {
     const savedTags = localStorage.getItem("customTags");
     if (savedTags) {
       setCustomTags(JSON.parse(savedTags));
+    }
+    
+    const savedCardHeight = localStorage.getItem("promptCardHeight");
+    if (savedCardHeight) {
+      setPromptCardHeight(parseInt(savedCardHeight));
     }
   }, []);
 
@@ -272,11 +279,12 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="categories" value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-5 mb-6">
           <TabsTrigger value="categories">Категории</TabsTrigger>
           <TabsTrigger value="tags">Теги</TabsTrigger>
           <TabsTrigger value="credentials">Учетные данные</TabsTrigger>
           <TabsTrigger value="notion">Notion API</TabsTrigger>
+          <TabsTrigger value="interface">Интерфейс</TabsTrigger>
         </TabsList>
         
         <TabsContent value="categories">
@@ -549,6 +557,67 @@ export default function Settings() {
                   </Button>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="interface">
+          <Card>
+            <CardHeader>
+              <CardTitle>Настройки интерфейса</CardTitle>
+              <CardDescription>
+                Настройка внешнего вида и элементов интерфейса
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Размер карточек промптов</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span>Высота:</span>
+                      <span className="font-medium">{promptCardHeight}px</span>
+                    </div>
+                    <Slider
+                      defaultValue={[promptCardHeight]}
+                      min={200}
+                      max={500}
+                      step={20}
+                      onValueChange={(value) => {
+                        setPromptCardHeight(value[0]);
+                        localStorage.setItem("promptCardHeight", value[0].toString());
+                      }}
+                      className="w-full"
+                    />
+                    
+                    <div className="mt-6">
+                      <h4 className="text-sm text-muted-foreground mb-2">Предпросмотр:</h4>
+                      <div 
+                        className="border rounded-lg shadow-sm dark:bg-card p-4"
+                        style={{ width: '300px', height: `${promptCardHeight}px` }}
+                      >
+                        <div className="flex flex-col h-full">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-medium">Название промпта</h4>
+                            <Badge variant="outline">Категория</Badge>
+                          </div>
+                          <div className="flex-grow overflow-hidden">
+                            <p className="text-sm text-muted-foreground mb-2 truncate-3">
+                              Содержимое промпта с примером текста, который будет отображаться в карточке. 
+                              Этот текст может быть длинным, поэтому важно видеть, как он будет обрезаться.
+                              Установите оптимальный размер для удобного просмотра.
+                            </p>
+                          </div>
+                          <div className="mt-auto flex flex-wrap gap-1 pt-2">
+                            <Badge className="bg-muted text-muted-foreground">тег1</Badge>
+                            <Badge className="bg-muted text-muted-foreground">тег2</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

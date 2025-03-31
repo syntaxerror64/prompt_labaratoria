@@ -22,6 +22,8 @@ export default function PromptGrid({
   handleViewPrompt
 }: PromptGridProps) {
   const activeCategoryName = CATEGORIES.find(c => c.id === activeCategory)?.name || "Все промпты";
+  // Получаем сохраненный размер карточки из localStorage или используем значение по умолчанию
+  const promptCardHeight = parseInt(localStorage.getItem("promptCardHeight") || '320');
   
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-background dark:bg-background">
@@ -65,7 +67,7 @@ export default function PromptGrid({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {prompts.map((prompt) => (
-              <div key={prompt.id} className="prompt-card bg-card dark:bg-card rounded-xl shadow-md overflow-hidden border border-border transition-transform hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ height: "320px" }}>
+              <div key={prompt.id} className="prompt-card bg-card dark:bg-card rounded-xl shadow-md overflow-hidden border border-border transition-transform hover:-translate-y-1 hover:shadow-lg flex flex-col" style={{ height: `${promptCardHeight}px` }}>
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-3">
                     <div className="bg-gold/30 dark:bg-gold/20 text-brown dark:text-gold px-2 py-1 rounded text-xs font-medium">
@@ -87,7 +89,15 @@ export default function PromptGrid({
                     </div>
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">{prompt.title}</h3>
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-grow">{prompt.content}</p>
+                  <div className="prompt-content relative flex-grow mb-4">
+                    <p className="text-muted-foreground text-sm line-clamp-3">{prompt.content}</p>
+                    <div className="absolute bottom-0 right-0 left-0 h-6 bg-gradient-to-t from-card to-transparent"></div>
+                    <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-16 flex justify-center">
+                      <div className="w-10 h-1 bg-muted rounded-full relative overflow-hidden">
+                        <div className="w-2 h-1 bg-orange absolute left-1 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {prompt.tags.map((tag) => (
                       <span key={tag} className="bg-muted dark:bg-muted text-brown dark:text-gold px-2 py-1 rounded-full text-xs">

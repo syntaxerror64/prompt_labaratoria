@@ -62,7 +62,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="auth-centered bg-background p-4">
       <div className="w-full max-w-5xl grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col justify-center space-y-6">
           <div>

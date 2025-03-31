@@ -195,8 +195,18 @@ export default function Trash() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Корзина</h1>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <h1 className="text-3xl font-bold">Корзина</h1>
+          <Button 
+            variant="outline" 
+            onClick={() => setLocation('/')}
+            className="self-start"
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Вернуться на главную
+          </Button>
+        </div>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" disabled={!deletedPrompts || deletedPrompts.length === 0}>

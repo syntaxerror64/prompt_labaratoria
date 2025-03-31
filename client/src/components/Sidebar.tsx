@@ -48,7 +48,7 @@ export default function Sidebar({
   onAddPrompt
 }: SidebarProps) {
   const [, setLocation] = useLocation();
-  const sidebarClass = `bg-card dark:bg-card border-r border-border shadow-lg w-64 h-full flex-shrink-0 fixed md:static z-10 transition-transform duration-300 ease-in-out ${
+  const sidebarClass = `bg-card dark:bg-card border-r border-border shadow-lg w-64 h-full flex-shrink-0 fixed md:static z-10 transition-transform duration-300 ease-in-out sidebar-scrollbar overflow-y-auto ${
     isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
   }`;
 

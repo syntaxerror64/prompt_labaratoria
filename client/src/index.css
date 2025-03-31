@@ -9,6 +9,59 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  
+  /* Кастомный скроллбар для сайдбара */
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.orange.DEFAULT');
+  }
+
+  /* Стили для кастомного ползунка */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: theme('colors.brown.DEFAULT');
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.orange.DEFAULT');
+  }
+
+  /* Обеспечение одинаковой высоты карточек промптов */
+  .prompt-card {
+    display: flex;
+    flex-direction: column;
+    height: 320px;
+  }
+
+  /* Центрирование окна авторизации */
+  .auth-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
 }
 
 @layer base {

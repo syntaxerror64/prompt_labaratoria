@@ -202,13 +202,31 @@ export default function Home() {
         {/* Mobile Header */}
         <header className="bg-background dark:bg-card shadow-sm md:hidden">
           <div className="flex justify-between items-center p-4">
-            <button onClick={() => setSidebarOpen(true)} className="text-foreground">
-              <i className="fas fa-bars text-xl"></i>
+            <button 
+              onClick={() => setSidebarOpen(true)} 
+              className="flex items-center justify-center rounded-md p-2 text-foreground hover:bg-muted"
+              aria-label="Открыть меню"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu">
+                <line x1="4" x2="20" y1="12" y2="12"></line>
+                <line x1="4" x2="20" y1="6" y2="6"></line>
+                <line x1="4" x2="20" y1="18" y2="18"></line>
+              </svg>
             </button>
             <h1 className="text-xl font-bold text-brown dark:text-gold">ПромптМастер</h1>
-            <button onClick={handleAddPrompt} className="text-orange">
-              <i className="fas fa-plus text-xl"></i>
-            </button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <button 
+                onClick={handleAddPrompt} 
+                className="flex items-center justify-center rounded-md p-2 text-orange hover:bg-muted"
+                aria-label="Добавить промпт"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus">
+                  <path d="M5 12h14"></path>
+                  <path d="M12 5v14"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </header>
         
