@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ThemeToggle from "./ThemeToggle";
 
 interface SearchFiltersProps {
   searchQuery: string;
@@ -79,6 +80,8 @@ export default function SearchFilters({
                 </div>
               )}
             </div>
+            {/* Переключатель темы */}
+            <ThemeToggle />
           </div>
         </div>
         
