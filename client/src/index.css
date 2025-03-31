@@ -10,43 +10,6 @@
     overflow: hidden;
   }
   
-  /* Кастомный скроллбар для сайдбара */
-  .sidebar-scrollbar::-webkit-scrollbar {
-    width: 3px;
-  }
-
-  .sidebar-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .sidebar-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(152, 118, 84, 0.3);
-    border-radius: 8px;
-  }
-
-  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(223, 108, 79, 0.5);
-  }
-
-  /* Стили для кастомного ползунка */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 3px;
-    height: 3px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(152, 118, 84, 0.3);
-    border-radius: 8px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(223, 108, 79, 0.5);
-  }
-
   /* Обеспечение одинаковой высоты карточек промптов */
   .prompt-card {
     display: flex;
@@ -134,8 +97,29 @@
     --ring: 45 78% 30%;
   }
   
+  /* Глобальные стили скроллбара для всего приложения */
   * {
     @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(152, 118, 84, 0.3) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px; 
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgba(152, 118, 84, 0.3);
+    border-radius: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(223, 108, 79, 0.5);
   }
 
   body {

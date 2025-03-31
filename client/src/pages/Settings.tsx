@@ -44,6 +44,7 @@ export default function Settings() {
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [promptCardHeight, setPromptCardHeight] = useState<number>(320);
+  const [promptCardWidth, setPromptCardWidth] = useState<number>(300);
 
   // Проверка авторизации
   useEffect(() => {
@@ -68,6 +69,11 @@ export default function Settings() {
     const savedCardHeight = localStorage.getItem("promptCardHeight");
     if (savedCardHeight) {
       setPromptCardHeight(parseInt(savedCardHeight));
+    }
+
+    const savedCardWidth = localStorage.getItem("promptCardWidth");
+    if (savedCardWidth) {
+      setPromptCardWidth(parseInt(savedCardWidth));
     }
   }, []);
 
@@ -573,28 +579,48 @@ export default function Settings() {
               <div className="space-y-8">
                 <div>
                   <h3 className="text-lg font-medium mb-3">Размер карточек промптов</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Высота:</span>
-                      <span className="font-medium">{promptCardHeight}px</span>
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span>Высота:</span>
+                        <span className="font-medium">{promptCardHeight}px</span>
+                      </div>
+                      <Slider
+                        defaultValue={[promptCardHeight]}
+                        min={200}
+                        max={500}
+                        step={20}
+                        onValueChange={(value) => {
+                          setPromptCardHeight(value[0]);
+                          localStorage.setItem("promptCardHeight", value[0].toString());
+                        }}
+                        className="w-full"
+                      />
                     </div>
-                    <Slider
-                      defaultValue={[promptCardHeight]}
-                      min={200}
-                      max={500}
-                      step={20}
-                      onValueChange={(value) => {
-                        setPromptCardHeight(value[0]);
-                        localStorage.setItem("promptCardHeight", value[0].toString());
-                      }}
-                      className="w-full"
-                    />
+                    
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span>Ширина:</span>
+                        <span className="font-medium">{promptCardWidth}px</span>
+                      </div>
+                      <Slider
+                        defaultValue={[promptCardWidth]}
+                        min={200}
+                        max={400}
+                        step={20}
+                        onValueChange={(value) => {
+                          setPromptCardWidth(value[0]);
+                          localStorage.setItem("promptCardWidth", value[0].toString());
+                        }}
+                        className="w-full"
+                      />
+                    </div>
                     
                     <div className="mt-6">
                       <h4 className="text-sm text-muted-foreground mb-2">Предпросмотр:</h4>
                       <div 
                         className="border rounded-lg shadow-sm dark:bg-card p-4"
-                        style={{ width: '300px', height: `${promptCardHeight}px` }}
+                        style={{ width: `${promptCardWidth}px`, height: `${promptCardHeight}px` }}
                       >
                         <div className="flex flex-col h-full">
                           <div className="flex items-center justify-between mb-2">
