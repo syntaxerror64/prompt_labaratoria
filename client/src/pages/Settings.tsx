@@ -8,6 +8,7 @@ import { CATEGORIES, CategoryInfo } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
+import { updateCredentialsSchema, updateNotionSettingsSchema } from "@shared/schema";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -40,6 +41,7 @@ export default function Settings() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Проверка авторизации
   useEffect(() => {
@@ -86,6 +88,25 @@ export default function Settings() {
     resolver: zodResolver(tagSchema),
     defaultValues: {
       name: "",
+    },
+  });
+  
+  // Форма для обновления учетных данных
+  const credentialsForm = useForm<z.infer<typeof updateCredentialsSchema>>({
+    resolver: zodResolver(updateCredentialsSchema),
+    defaultValues: {
+      username: "",
+      currentPassword: "",
+      newPassword: "",
+    },
+  });
+  
+  // Форма для обновления настроек Notion
+  const notionSettingsForm = useForm<z.infer<typeof updateNotionSettingsSchema>>({
+    resolver: zodResolver(updateNotionSettingsSchema),
+    defaultValues: {
+      notionApiToken: "",
+      notionDatabaseId: "",
     },
   });
 
@@ -183,6 +204,60 @@ export default function Settings() {
       setIsDeleteDialogOpen(false);
     }
   }
+  
+  // Mutation для обновления учетных данных
+  const updateCredentialsMutation = useMutation({
+    mutationFn: (data: z.infer<typeof updateCredentialsSchema>) => {
+      return apiRequest('POST', '/api/update-credentials', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Успех",
+        description: "Учетные данные успешно обновлены",
+      });
+      credentialsForm.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: `Не удалось обновить учетные данные: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Mutation для обновления настроек Notion
+  const updateNotionSettingsMutation = useMutation({
+    mutationFn: (data: z.infer<typeof updateNotionSettingsSchema>) => {
+      return apiRequest('POST', '/api/update-notion-settings', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Успех",
+        description: "Настройки Notion успешно обновлены",
+      });
+      notionSettingsForm.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: `Не удалось обновить настройки Notion: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Обработчик обновления учетных данных
+  function onUpdateCredentials(values: z.infer<typeof updateCredentialsSchema>) {
+    setIsLoading(true);
+    updateCredentialsMutation.mutate(values);
+  }
+  
+  // Обработчик обновления настроек Notion
+  function onUpdateNotionSettings(values: z.infer<typeof updateNotionSettingsSchema>) {
+    setIsLoading(true);
+    updateNotionSettingsMutation.mutate(values);
+  }
 
   return (
     <div className="container mx-auto py-6 max-w-4xl">
@@ -197,9 +272,11 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="categories" value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="categories">Категории</TabsTrigger>
           <TabsTrigger value="tags">Теги</TabsTrigger>
+          <TabsTrigger value="credentials">Учетные данные</TabsTrigger>
+          <TabsTrigger value="notion">Notion API</TabsTrigger>
         </TabsList>
         
         <TabsContent value="categories">
@@ -354,6 +431,124 @@ export default function Settings() {
                   </form>
                 </Form>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="credentials">
+          <Card>
+            <CardHeader>
+              <CardTitle>Учетные данные</CardTitle>
+              <CardDescription>
+                Изменение логина и пароля для доступа к сайту
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...credentialsForm}>
+                <form onSubmit={credentialsForm.handleSubmit(onUpdateCredentials)} className="space-y-4">
+                  <FormField
+                    control={credentialsForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Имя пользователя</FormLabel>
+                        <FormControl>
+                          <Input placeholder="admin" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={credentialsForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Текущий пароль</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="********" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={credentialsForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Новый пароль</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="********" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button 
+                    type="submit" 
+                    className="bg-[#DF6C4F] hover:bg-[#c85c41]"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Обновление..." : "Обновить учетные данные"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="notion">
+          <Card>
+            <CardHeader>
+              <CardTitle>Настройки Notion API</CardTitle>
+              <CardDescription>
+                Настройка интеграции с базой данных Notion
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...notionSettingsForm}>
+                <form onSubmit={notionSettingsForm.handleSubmit(onUpdateNotionSettings)} className="space-y-4">
+                  <FormField
+                    control={notionSettingsForm.control}
+                    name="notionApiToken"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notion API Token</FormLabel>
+                        <FormControl>
+                          <Input placeholder="secret_..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={notionSettingsForm.control}
+                    name="notionDatabaseId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ID базы данных Notion</FormLabel>
+                        <FormControl>
+                          <Input placeholder="1c79a6cd7ecb80fe80a3eb46e485e75c" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button 
+                    type="submit" 
+                    className="bg-[#DF6C4F] hover:bg-[#c85c41]"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Обновление..." : "Обновить настройки Notion"}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>

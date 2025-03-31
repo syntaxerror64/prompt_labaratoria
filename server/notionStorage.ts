@@ -33,8 +33,21 @@ export class NotionStorage implements IStorage {
     this.databaseId = databaseId;
     this.users = new Map();
     this.userCurrentId = 1;
+    
+    // Инициализируем кэш настроек
+    this.settingsCache = new Map();
+    this.settingsCache.set('notionApiToken', apiKey);
+    this.settingsCache.set('notionDatabaseId', databaseId);
 
     log('NotionStorage initialized with database ID: ' + this.databaseId, 'notion');
+    
+    // Создаем учетную запись администратора по умолчанию
+    const adminUser: User = {
+      id: this.userCurrentId++,
+      username: 'admin',
+      password: 'admin' // В реальном приложении это должен быть хешированный пароль
+    };
+    this.users.set(adminUser.id, adminUser);
     
     // Инициализируем схему базы данных
     this.initializeDatabase();
@@ -157,27 +170,36 @@ export class NotionStorage implements IStorage {
 
   async createPrompt(prompt: InsertPrompt): Promise<Prompt> {
     try {
+      console.log('Creating prompt with title:', prompt.title);
+      
+      // Создаем объект свойств для страницы
+      const properties: any = {
+        title: {
+          title: [{ text: { content: prompt.title } }]
+        },
+        content: {
+          rich_text: [{ text: { content: prompt.content } }]
+        },
+        category: {
+          select: { name: prompt.category }
+        },
+        tags: {
+          multi_select: prompt.tags.map(tag => ({ name: tag }))
+        },
+        createdAt: {
+          date: { start: new Date().toISOString() }
+        }
+      };
+      
+      console.log('Creating page with properties:', JSON.stringify(properties));
+      
       // Создаем новую запись в Notion
       const response = await this.notionClient.pages.create({
         parent: { database_id: this.databaseId },
-        properties: {
-          title: {
-            title: [{ text: { content: prompt.title } }]
-          },
-          content: {
-            rich_text: [{ text: { content: prompt.content } }]
-          },
-          category: {
-            select: { name: prompt.category }
-          },
-          tags: {
-            multi_select: prompt.tags.map(tag => ({ name: tag }))
-          },
-          createdAt: {
-            date: { start: new Date().toISOString() }
-          }
-        }
+        properties: properties
       });
+      
+      console.log('Created page. Response ID:', response.id);
 
       // Получаем UUID страницы Notion
       const notionUuid = response.id;
@@ -187,6 +209,9 @@ export class NotionStorage implements IStorage {
       
       // Добавляем маппинг
       this.idMapping.set(numericId, notionUuid);
+      
+      // Просто логируем успешное создание
+      console.log('Created page with ID:', notionUuid);
       
       // Возвращаем созданный промпт в формате нашего приложения
       return {
@@ -223,6 +248,7 @@ export class NotionStorage implements IStorage {
       const properties: any = {};
       
       if (promptData.title) {
+        console.log('Updating prompt title to:', promptData.title);
         properties.title = {
           title: [{ text: { content: promptData.title } }]
         };
@@ -288,6 +314,52 @@ export class NotionStorage implements IStorage {
       return false;
     }
   }
+  
+  // User management methods
+  async updateUser(id: number, username: string, password: string): Promise<User | undefined> {
+    const existingUser = await this.getUser(id);
+    
+    if (!existingUser) {
+      return undefined;
+    }
+    
+    const updatedUser: User = {
+      ...existingUser,
+      username,
+      password
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  // Settings methods
+  private settingsCache: Map<string, string> = new Map();
+  
+  async getSetting(key: string): Promise<string | undefined> {
+    return this.settingsCache.get(key) || undefined;
+  }
+  
+  async setSetting(key: string, value: string): Promise<void> {
+    this.settingsCache.set(key, value);
+  }
+  
+  async updateNotionSettings(apiToken: string, databaseId: string): Promise<void> {
+    // Сохраняем новые настройки в кэше
+    this.settingsCache.set('notionApiToken', apiToken);
+    this.settingsCache.set('notionDatabaseId', databaseId);
+    
+    // Обновляем переменные окружения
+    process.env.NOTION_API_TOKEN = apiToken;
+    process.env.NOTION_DATABASE_ID = databaseId;
+    
+    // Пересоздаем клиент Notion с новым токеном
+    this.notionClient = new Client({ auth: apiToken });
+    this.databaseId = databaseId;
+    
+    // Переинициализируем базу данных со схемой
+    await this.initializeDatabase();
+  }
 
   // Приватное поле для хранения маппинга между числовыми ID и UUID Notion
   private idMapping: Map<number, string> = new Map();
@@ -316,8 +388,57 @@ export class NotionStorage implements IStorage {
       this.idMapping.set(numericId, notionUuid);
     }
     
-    // Получаем заголовок (это поле всегда есть в Notion)
-    const title = properties.title?.title?.map((t: any) => t.plain_text).join('') || 'Untitled';
+    // Получаем заголовок из свойства title
+    let title = 'Untitled';
+    try {
+      console.log('Original properties from Notion:', JSON.stringify(properties));
+      
+      // Проверяем разные форматы для поля title в Notion
+      if (properties.title) {
+        // Проверка на основные форматы
+        if (Array.isArray(properties.title.title)) {
+          // Стандартный формат с массивом текстовых блоков
+          const titleTexts = properties.title.title
+            .filter((t: any) => t && t.text && t.text.content)
+            .map((t: any) => t.text.content);
+          
+          if (titleTexts.length > 0) {
+            title = titleTexts.join('');
+            console.log('Extracted title from title.title array:', title);
+          }
+        } else if (properties.title.rich_text) {
+          // Альтернативный формат с rich_text
+          const titleTexts = properties.title.rich_text
+            .filter((t: any) => t && t.text && t.text.content)
+            .map((t: any) => t.text.content);
+          
+          if (titleTexts.length > 0) {
+            title = titleTexts.join('');
+            console.log('Extracted title from title.rich_text array:', title);
+          }
+        } else if (typeof properties.title === 'string') {
+          // Прямое строковое значение
+          title = properties.title;
+          console.log('Using direct string title:', title);
+        }
+      } else if (properties.Name) {
+        // Fallback для Notion, который иногда использует "Name" вместо "title"
+        if (Array.isArray(properties.Name.title)) {
+          const titleTexts = properties.Name.title
+            .filter((t: any) => t && t.text && t.text.content)
+            .map((t: any) => t.text.content);
+          
+          if (titleTexts.length > 0) {
+            title = titleTexts.join('');
+            console.log('Extracted title from Name.title array:', title);
+          }
+        }
+      }
+      
+      console.log('Final mapped title:', title);
+    } catch (error) {
+      console.error('Error parsing title from Notion:', error);
+    }
     
     // Получаем содержимое (может не быть, если поле только что создано)
     const content = properties.content?.rich_text?.map((t: any) => t.plain_text).join('') || '';

@@ -34,3 +34,36 @@ export const insertPromptSchema = createInsertSchema(prompts).omit({
 
 export type InsertPrompt = z.infer<typeof insertPromptSchema>;
 export type Prompt = typeof prompts.$inferSelect;
+
+// Определение схемы таблицы настроек
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Схема для вставки настроек
+export const insertSettingSchema = createInsertSchema(settings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertSetting = z.infer<typeof insertSettingSchema>;
+export type Setting = typeof settings.$inferSelect;
+
+// Схема для обновления учетных данных
+export const updateCredentialsSchema = z.object({
+  username: z.string().min(3, "Имя пользователя должно содержать не менее 3 символов"),
+  currentPassword: z.string().min(1, "Текущий пароль обязателен"),
+  newPassword: z.string().min(6, "Новый пароль должен содержать не менее 6 символов"),
+});
+
+// Схема для обновления настроек Notion
+export const updateNotionSettingsSchema = z.object({
+  notionApiToken: z.string().min(1, "API токен обязателен"),
+  notionDatabaseId: z.string().min(1, "ID базы данных обязателен"),
+});
+
+export type UpdateCredentials = z.infer<typeof updateCredentialsSchema>;
+export type UpdateNotionSettings = z.infer<typeof updateNotionSettingsSchema>;

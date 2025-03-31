@@ -26,9 +26,11 @@ try {
 // modify the interface with any CRUD methods
 // you might need
 export interface IStorage {
+  // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, username: string, password: string): Promise<User | undefined>;
   
   // Prompt methods
   getPrompts(): Promise<Prompt[]>;
@@ -36,19 +38,30 @@ export interface IStorage {
   createPrompt(prompt: InsertPrompt): Promise<Prompt>;
   updatePrompt(id: number, prompt: Partial<InsertPrompt>): Promise<Prompt | undefined>;
   deletePrompt(id: number): Promise<boolean>;
+  
+  // Settings methods
+  getSetting(key: string): Promise<string | undefined>;
+  setSetting(key: string, value: string): Promise<void>;
+  updateNotionSettings(apiToken: string, databaseId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private prompts: Map<number, Prompt>;
+  private settings: Map<string, string>;
   private userCurrentId: number;
   private promptCurrentId: number;
 
   constructor() {
     this.users = new Map();
     this.prompts = new Map();
+    this.settings = new Map();
     this.userCurrentId = 1;
     this.promptCurrentId = 1;
+    
+    // Инициализация дефолтных настроек
+    this.settings.set('notionApiToken', process.env.NOTION_API_TOKEN || '');
+    this.settings.set('notionDatabaseId', process.env.NOTION_DATABASE_ID || '');
     
     // Load prompts from JSON file
     this.loadPrompts();
@@ -148,6 +161,42 @@ export class MemStorage implements IStorage {
       this.savePrompts();
     }
     return deleted;
+  }
+  
+  // User management methods
+  async updateUser(id: number, username: string, password: string): Promise<User | undefined> {
+    const existingUser = this.users.get(id);
+    
+    if (!existingUser) {
+      return undefined;
+    }
+    
+    const updatedUser: User = {
+      ...existingUser,
+      username,
+      password
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  // Settings methods
+  async getSetting(key: string): Promise<string | undefined> {
+    return this.settings.get(key);
+  }
+  
+  async setSetting(key: string, value: string): Promise<void> {
+    this.settings.set(key, value);
+  }
+  
+  async updateNotionSettings(apiToken: string, databaseId: string): Promise<void> {
+    this.settings.set('notionApiToken', apiToken);
+    this.settings.set('notionDatabaseId', databaseId);
+    
+    // Обновляем переменные окружения (для текущей сессии)
+    process.env.NOTION_API_TOKEN = apiToken;
+    process.env.NOTION_DATABASE_ID = databaseId;
   }
 }
 

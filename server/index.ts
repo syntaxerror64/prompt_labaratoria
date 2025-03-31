@@ -1,10 +1,34 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import session from "express-session";
+import memorystore from "memorystore";
+import dotenv from "dotenv";
+
+// Загружаем переменные окружения из .env
+dotenv.config();
+
+// Создаем хранилище сессий
+const MemoryStore = memorystore(session);
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Настройка сессий
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  saveUninitialized: false,
+  resave: false,
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000, // 24 часа
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true
+  },
+  store: new MemoryStore({
+    checkPeriod: 86400000 // очищает просроченные сессии каждые 24 часа
+  })
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();

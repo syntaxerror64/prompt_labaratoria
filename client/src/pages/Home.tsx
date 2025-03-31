@@ -32,12 +32,12 @@ export default function Home() {
   const { toast } = useToast();
   
   // Fetch prompts
-  const { data: prompts = [], isLoading } = useQuery({
+  const { data: prompts = [], isLoading } = useQuery<Prompt[]>({
     queryKey: ['/api/prompts'],
   });
   
   // Filter prompts based on search, tags, and category
-  const filteredPrompts = prompts.filter((prompt: Prompt) => {
+  const filteredPrompts = prompts.filter((prompt) => {
     // Filter by search query
     const matchesSearch = searchQuery === "" || 
       prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,15 +55,15 @@ export default function Home() {
   });
   
   // Get all tags from prompts
-  const allTags = Array.from(
+  const allTags: string[] = Array.from(
     new Set(
-      prompts.flatMap((prompt: Prompt) => prompt.tags)
+      prompts.flatMap((prompt) => prompt.tags)
     )
   );
   
   // Popular tags (take the 5 most common tags)
   const tagCount: Record<string, number> = {};
-  prompts.forEach((prompt: Prompt) => {
+  prompts.forEach((prompt) => {
     prompt.tags.forEach(tag => {
       tagCount[tag] = (tagCount[tag] || 0) + 1;
     });
