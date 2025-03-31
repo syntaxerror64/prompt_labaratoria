@@ -325,9 +325,15 @@ export class NotionStorage implements IStorage {
       }
       
       // Создаем объект свойств для страницы
+      // Ограничиваем длину заголовка до 2000 символов (ограничение Notion API)
+      const MAX_TITLE_LENGTH = 1990;
+      const limitedTitle = prompt.title.length > MAX_TITLE_LENGTH 
+        ? prompt.title.substring(0, MAX_TITLE_LENGTH) + "..." 
+        : prompt.title;
+        
       const properties: any = {
         title: {
-          title: [{ text: { content: prompt.title } }]
+          title: [{ text: { content: limitedTitle } }]
         },
         content: {
           rich_text: [{ text: { content: mainContent } }]
@@ -366,9 +372,15 @@ export class NotionStorage implements IStorage {
         // Создаем дочерние страницы для каждой части контента
         for (let i = 0; i < contentParts.length; i++) {
           try {
+            // Ограничиваем длину заголовка части
+            const MAX_PART_TITLE_LENGTH = 100;
+            const partTitle = prompt.title.length > MAX_PART_TITLE_LENGTH 
+              ? prompt.title.substring(0, MAX_PART_TITLE_LENGTH) + "... - Part " + (i + 1)
+              : `${prompt.title} - Part ${i + 1}`;
+                
             const partProperties: any = {
               title: {
-                title: [{ text: { content: `${prompt.title} - Part ${i + 1}` } }]
+                title: [{ text: { content: partTitle } }]
               },
               content: {
                 rich_text: [{ text: { content: contentParts[i] } }]
@@ -442,8 +454,14 @@ export class NotionStorage implements IStorage {
       
       if (promptData.title) {
         console.log('Updating prompt title to:', promptData.title);
+        // Ограничиваем длину заголовка при обновлении
+        const MAX_TITLE_LENGTH = 1990;
+        const limitedTitle = promptData.title.length > MAX_TITLE_LENGTH
+          ? promptData.title.substring(0, MAX_TITLE_LENGTH) + "..."
+          : promptData.title;
+          
         properties.title = {
-          title: [{ text: { content: promptData.title } }]
+          title: [{ text: { content: limitedTitle } }]
         };
       }
       
@@ -516,9 +534,16 @@ export class NotionStorage implements IStorage {
         if (contentParts.length > 0) {
           for (let i = 0; i < contentParts.length; i++) {
             try {
+              // Ограничиваем длину заголовка части для обновления
+              const MAX_PART_TITLE_LENGTH = 100;
+              const titleToUse = promptData.title || existingPrompt.title;
+              const partTitle = titleToUse.length > MAX_PART_TITLE_LENGTH 
+                ? titleToUse.substring(0, MAX_PART_TITLE_LENGTH) + "... - Part " + (i + 1)
+                : `${titleToUse} - Part ${i + 1}`;
+                
               const partProperties: any = {
                 title: {
-                  title: [{ text: { content: `${promptData.title || existingPrompt.title} - Part ${i + 1}` } }]
+                  title: [{ text: { content: partTitle } }]
                 },
                 content: {
                   rich_text: [{ text: { content: contentParts[i] } }]
