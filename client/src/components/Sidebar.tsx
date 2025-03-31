@@ -75,12 +75,9 @@ export default function Sidebar({
             <span className="mr-2">💬</span>
             <span>ПромптМастер</span>
           </h1>
-          <div className="flex items-center">
-            <ThemeToggle />
-            <button onClick={toggleSidebar} className="ml-2 md:hidden text-muted-foreground hover:text-foreground">
-              <X size={20} />
-            </button>
-          </div>
+          <button onClick={toggleSidebar} className="md:hidden text-muted-foreground hover:text-foreground">
+            <X size={20} />
+          </button>
         </div>
         
         {/* Categories Navigation */}

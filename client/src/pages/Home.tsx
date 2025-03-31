@@ -11,6 +11,7 @@ import PromptGrid from "@/components/PromptGrid";
 import PromptModal from "@/components/PromptModal";
 import ViewPromptModal from "@/components/ViewPromptModal";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   // State for sidebar on mobile
@@ -196,19 +197,24 @@ export default function Home() {
       />
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-background dark:bg-background">
         {/* Mobile Header */}
-        <header className="bg-white shadow-sm md:hidden">
+        <header className="bg-background dark:bg-card shadow-sm md:hidden">
           <div className="flex justify-between items-center p-4">
-            <button onClick={() => setSidebarOpen(true)} className="text-gray-600">
+            <button onClick={() => setSidebarOpen(true)} className="text-foreground">
               <i className="fas fa-bars text-xl"></i>
             </button>
-            <h1 className="text-xl font-bold text-[#987654]">PromptMaster</h1>
-            <button onClick={handleAddPrompt} className="text-[#DF6C4F]">
+            <h1 className="text-xl font-bold text-brown dark:text-gold">ПромптМастер</h1>
+            <button onClick={handleAddPrompt} className="text-orange">
               <i className="fas fa-plus text-xl"></i>
             </button>
           </div>
         </header>
+        
+        {/* Desktop Header with Theme Toggle */}
+        <div className="hidden md:flex justify-end p-4">
+          <ThemeToggle />
+        </div>
         
         {/* Search and Filters */}
         <SearchFilters 
