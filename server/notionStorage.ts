@@ -99,7 +99,10 @@ export class NotionStorage implements IStorage {
             { name: 'academic', color: 'red' }
           ]
         }},
-        createdAt: { date: {} }
+        createdAt: { date: {} },
+        contentPartCount: { number: {} },
+        partIndex: { number: {} },
+        parentPromptId: { rich_text: {} }
       };
       
       // Собираем недостающие свойства
