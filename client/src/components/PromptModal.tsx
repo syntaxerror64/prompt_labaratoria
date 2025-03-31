@@ -93,9 +93,9 @@ export default function PromptModal({
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
-      <DialogContent className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-background dark:bg-background border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-gray-800">
+          <DialogTitle className="text-2xl font-bold text-foreground">
             {isEditing ? "Редактировать промпт" : "Добавить новый промпт"}
           </DialogTitle>
         </DialogHeader>
@@ -107,11 +107,11 @@ export default function PromptModal({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Название промпта</FormLabel>
+                  <FormLabel className="text-foreground">Название промпта</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Введите название промпта"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full bg-card dark:bg-card border-input"
                       {...field}
                     />
                   </FormControl>
@@ -125,20 +125,20 @@ export default function PromptModal({
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Категория</FormLabel>
+                  <FormLabel className="text-foreground">Категория</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                      <SelectTrigger className="w-full bg-card dark:bg-card border-input">
                         <SelectValue placeholder="Выберите категорию" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="bg-card dark:bg-card border-border">
                       {CATEGORIES.filter(c => c.id !== "all").map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
+                        <SelectItem key={category.id} value={category.id} className="text-foreground hover:bg-accent">
                           {category.name}
                         </SelectItem>
                       ))}
@@ -154,11 +154,11 @@ export default function PromptModal({
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Содержание промпта</FormLabel>
+                  <FormLabel className="text-foreground">Содержание промпта</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Напишите содержание промпта. Используйте [заполнители] для переменного контента."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full bg-card dark:bg-card border-input"
                       rows={6}
                       {...field}
                     />
@@ -173,7 +173,7 @@ export default function PromptModal({
               name="tags"
               render={() => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Теги</FormLabel>
+                  <FormLabel className="text-foreground">Теги</FormLabel>
                   <div className="flex gap-2">
                     <Input
                       placeholder="Добавьте тег и нажмите Enter"
@@ -185,9 +185,14 @@ export default function PromptModal({
                           addTag();
                         }
                       }}
-                      className="flex-1"
+                      className="flex-1 bg-card dark:bg-card border-input"
                     />
-                    <Button type="button" onClick={addTag} variant="outline">
+                    <Button 
+                      type="button" 
+                      onClick={addTag} 
+                      variant="outline"
+                      className="border-input hover:bg-accent"
+                    >
                       Добавить
                     </Button>
                   </div>
@@ -195,13 +200,13 @@ export default function PromptModal({
                     {form.getValues().tags.map((tag) => (
                       <div
                         key={tag}
-                        className="bg-[#f2e0a0] text-[#987654] px-3 py-1 rounded-full text-sm flex items-center"
+                        className="bg-gold/30 dark:bg-gold/20 text-brown dark:text-gold px-3 py-1 rounded-full text-sm flex items-center"
                       >
                         #{tag}
                         <button
                           type="button"
                           onClick={() => removeTag(tag)}
-                          className="ml-2 text-[#987654] hover:text-[#DF6C4F]"
+                          className="ml-2 text-brown dark:text-gold hover:text-orange"
                         >
                           <X size={12} />
                         </button>
@@ -209,7 +214,7 @@ export default function PromptModal({
                     ))}
                   </div>
                   {form.formState.errors.tags && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.tags.message}</p>
+                    <p className="text-destructive text-sm mt-1">{form.formState.errors.tags.message}</p>
                   )}
                 </FormItem>
               )}
@@ -220,13 +225,13 @@ export default function PromptModal({
                 type="button"
                 variant="outline"
                 onClick={closeModal}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                className="border-input bg-background dark:bg-background hover:bg-accent"
               >
                 Отмена
               </Button>
               <Button
                 type="submit"
-                className="px-4 py-2 bg-[#DF6C4F] hover:bg-[#e8836a] text-white rounded-lg transition-colors"
+                className="bg-orange hover:bg-orange/90 text-white"
               >
                 Сохранить промпт
               </Button>
