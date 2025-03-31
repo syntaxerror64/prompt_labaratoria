@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Settings from "@/pages/Settings";
 import Stats from "@/pages/Stats";
 import Trash from "@/pages/Trash";
+import Constructor from "@/pages/Constructor";
 import AuthPage from "@/pages/auth-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -19,6 +20,7 @@ function Router() {
       <ProtectedRoute path="/settings" component={Settings} />
       <ProtectedRoute path="/stats" component={Stats} />
       <ProtectedRoute path="/trash" component={Trash} />
+      <ProtectedRoute path="/constructor" component={Constructor} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

@@ -16,7 +16,8 @@ import {
   Settings,
   BarChart2,
   LogOut,
-  Trash2
+  Trash2,
+  Wrench
 } from "lucide-react";
 
 interface SidebarProps {
@@ -71,6 +72,11 @@ export default function Sidebar({
   // Переход на страницу корзины
   const goToTrash = () => {
     setLocation("/trash");
+  };
+  
+  // Переход на страницу конструктора
+  const goToConstructor = () => {
+    setLocation("/constructor");
   };
 
   return (
@@ -133,6 +139,15 @@ export default function Sidebar({
         <nav className="mb-auto">
           <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Навигация</h2>
           <ul>
+            <li className="mb-1">
+              <button
+                onClick={goToConstructor}
+                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-accent/50 dark:hover:bg-accent/40"
+              >
+                <Wrench className="mr-2 h-4 w-4" />
+                <span>Конструктор</span>
+              </button>
+            </li>
             <li className="mb-1">
               <button
                 onClick={goToStats}

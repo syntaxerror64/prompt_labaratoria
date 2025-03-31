@@ -22,6 +22,7 @@ export class NotionStorage implements IStorage {
   private users: Map<number, User>;
   private userCurrentId: number;
   private settingsCache: Map<string, string> = new Map();
+  private contentPartStorage: Map<number, string[]> = new Map(); // Хранение дополнительных частей контента
   private deletedPrompts: Map<number, DeletedPrompt> = new Map();
   private deletedPromptCurrentId: number = 1;
   private idMapping: Map<number, string> = new Map();
@@ -185,13 +186,42 @@ export class NotionStorage implements IStorage {
     try {
       console.log('Creating prompt with title:', prompt.title);
       
+      // Подготовка хранения длинного текста в Notion
+      // Основной текст храним в обычном поле content с ограничением
+      const MAX_CONTENT_LENGTH = 1990; // Оставляем небольшой запас
+      let mainContent = prompt.content;
+      let contentParts: string[] = [];
+      
+      // Если текст длиннее максимальной длины, разбиваем его на части
+      if (prompt.content.length > MAX_CONTENT_LENGTH) {
+        console.log(`Long content detected: ${prompt.content.length} characters. Splitting into parts.`);
+        mainContent = prompt.content.substring(0, MAX_CONTENT_LENGTH) + "...";
+        
+        // Разбиваем оставшийся текст на части по MAX_CONTENT_LENGTH символов
+        let remainingContent = prompt.content.substring(MAX_CONTENT_LENGTH);
+        while (remainingContent.length > 0) {
+          if (remainingContent.length <= MAX_CONTENT_LENGTH) {
+            contentParts.push(remainingContent);
+            remainingContent = "";
+          } else {
+            contentParts.push(remainingContent.substring(0, MAX_CONTENT_LENGTH));
+            remainingContent = remainingContent.substring(MAX_CONTENT_LENGTH);
+          }
+        }
+        
+        console.log(`Content split into ${contentParts.length + 1} parts`);
+      }
+      
       // Создаем объект свойств для страницы
       const properties: any = {
         title: {
           title: [{ text: { content: prompt.title } }]
         },
         content: {
-          rich_text: [{ text: { content: prompt.content } }]
+          rich_text: [{ text: { content: mainContent } }]
+        },
+        contentPartCount: {
+          number: contentParts.length
         },
         category: {
           select: { name: prompt.category }
@@ -213,6 +243,44 @@ export class NotionStorage implements IStorage {
       });
       
       console.log('Created page. Response ID:', response.id);
+      
+      // Если есть дополнительные части контента, создаем дочерние страницы для них
+      if (contentParts.length > 0) {
+        console.log(`Creating ${contentParts.length} content parts as child pages`);
+        
+        // Сохраняем ID родительской страницы для связывания
+        const parentId = response.id;
+        
+        // Создаем дочерние страницы для каждой части контента
+        for (let i = 0; i < contentParts.length; i++) {
+          try {
+            const partProperties: any = {
+              title: {
+                title: [{ text: { content: `${prompt.title} - Part ${i + 1}` } }]
+              },
+              content: {
+                rich_text: [{ text: { content: contentParts[i] } }]
+              },
+              partIndex: {
+                number: i + 1
+              },
+              parentPromptId: {
+                rich_text: [{ text: { content: parentId } }]
+              }
+            };
+            
+            // Создаем дочернюю страницу
+            const childResponse = await this.notionClient.pages.create({
+              parent: { database_id: this.databaseId },
+              properties: partProperties
+            });
+            
+            console.log(`Created content part ${i + 1} with ID: ${childResponse.id}`);
+          } catch (partError) {
+            console.error(`Error creating content part ${i + 1}:`, partError);
+          }
+        }
+      }
 
       // Получаем UUID страницы Notion
       const notionUuid = response.id;
@@ -257,7 +325,7 @@ export class NotionStorage implements IStorage {
         return undefined;
       }
 
-      // Готовим обновленные данные
+      // Готовим обновленные данные для основной страницы
       const properties: any = {};
       
       if (promptData.title) {
@@ -267,10 +335,108 @@ export class NotionStorage implements IStorage {
         };
       }
       
+      // Проверка длины контента и обработка для Notion API
       if (promptData.content) {
+        const MAX_CONTENT_LENGTH = 1990; // Для Notion API
+        let mainContent = promptData.content;
+        let contentParts: string[] = [];
+        
+        // Если контент слишком длинный, разбиваем на части
+        if (promptData.content.length > MAX_CONTENT_LENGTH) {
+          console.log(`Long content detected on update: ${promptData.content.length} characters`);
+          mainContent = promptData.content.substring(0, MAX_CONTENT_LENGTH) + "...";
+          
+          // Разбиваем оставшийся текст на части
+          let remainingContent = promptData.content.substring(MAX_CONTENT_LENGTH);
+          while (remainingContent.length > 0) {
+            if (remainingContent.length <= MAX_CONTENT_LENGTH) {
+              contentParts.push(remainingContent);
+              remainingContent = "";
+            } else {
+              contentParts.push(remainingContent.substring(0, MAX_CONTENT_LENGTH));
+              remainingContent = remainingContent.substring(MAX_CONTENT_LENGTH);
+            }
+          }
+          
+          console.log(`Content split into ${contentParts.length + 1} parts for update`);
+          
+          // Обновляем число частей
+          properties.contentPartCount = {
+            number: contentParts.length
+          };
+        } else {
+          // Если контент короткий, убираем все дополнительные части
+          properties.contentPartCount = {
+            number: 0
+          };
+        }
+        
+        // Обновляем основное содержимое
         properties.content = {
-          rich_text: [{ text: { content: promptData.content } }]
+          rich_text: [{ text: { content: mainContent } }]
         };
+        
+        // Удаляем старые части контента из Notion
+        try {
+          const existingParts = await this.notionClient.databases.query({
+            database_id: this.databaseId,
+            filter: {
+              property: 'parentPromptId',
+              rich_text: {
+                equals: notionUuid
+              }
+            }
+          });
+          
+          // Архивируем все найденные части
+          for (const part of existingParts.results) {
+            await this.notionClient.pages.update({
+              page_id: part.id,
+              archived: true
+            });
+            console.log(`Archived old content part: ${part.id}`);
+          }
+        } catch (archiveError) {
+          console.error('Error archiving old content parts:', archiveError);
+        }
+        
+        // Если есть новые части, создаем их
+        if (contentParts.length > 0) {
+          for (let i = 0; i < contentParts.length; i++) {
+            try {
+              const partProperties: any = {
+                title: {
+                  title: [{ text: { content: `${promptData.title || existingPrompt.title} - Part ${i + 1}` } }]
+                },
+                content: {
+                  rich_text: [{ text: { content: contentParts[i] } }]
+                },
+                partIndex: {
+                  number: i + 1
+                },
+                parentPromptId: {
+                  rich_text: [{ text: { content: notionUuid } }]
+                }
+              };
+              
+              // Создаем дочернюю страницу
+              const childResponse = await this.notionClient.pages.create({
+                parent: { database_id: this.databaseId },
+                properties: partProperties
+              });
+              
+              console.log(`Created updated content part ${i + 1} with ID: ${childResponse.id}`);
+            } catch (partError) {
+              console.error(`Error creating updated content part ${i + 1}:`, partError);
+            }
+          }
+          
+          // Обновляем кэш частей контента
+          this.contentPartStorage.set(id, contentParts);
+        } else {
+          // Если частей нет, очищаем кэш
+          this.contentPartStorage.delete(id);
+        }
       }
       
       if (promptData.category) {
@@ -526,6 +692,31 @@ export class NotionStorage implements IStorage {
         
         if (contentTexts.length > 0) {
           content = contentTexts.join('\n');
+        }
+        
+        // Проверяем, есть ли у страницы дополнительные части контента
+        let contentPartCount = 0;
+        if (properties.contentPartCount && properties.contentPartCount.number !== undefined) {
+          contentPartCount = properties.contentPartCount.number;
+        }
+        
+        // Если есть части контента, используем части из кэша
+        if (contentPartCount > 0) {
+          console.log(`Found prompt with ${contentPartCount} additional content parts, notionUuid: ${notionUuid}`);
+          
+          // Загружаем части из кэша, если они доступны
+          const parts = this.contentPartStorage.get(numericId) || [];
+          if (parts.length > 0) {
+            console.log(`Using cached ${parts.length} content parts for prompt ${numericId}`);
+            // Объединяем части с основным контентом
+            const fullContent = content.replace(/\.\.\.$/, '') + parts.join('');
+            content = fullContent;
+          } else {
+            console.log(`No cached content parts found, will load them asynchronously`);
+            // В фоновом режиме загрузим части и обновим кэш для следующего запроса
+            // TODO: Реализовать асинхронную загрузку частей
+            // this.loadContentPartsAsync(numericId, notionUuid);
+          }
         }
       }
     } catch (error) {
