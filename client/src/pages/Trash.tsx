@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ interface DeletedPrompt {
 
 export default function Trash() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [selectedPrompt, setSelectedPrompt] = useState<DeletedPrompt | null>(null);
   
   // Запрос на получение удаленных промптов
@@ -42,6 +44,15 @@ export default function Trash() {
     queryKey: ['/api/trash'],
     staleTime: 1000 * 60, // 1 минута
     refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const response = await fetch('/api/trash', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки удаленных промптов');
+      }
+      return response.json();
+    }
   });
   
   // Мутация для восстановления промпта
@@ -52,6 +63,7 @@ export default function Trash() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -83,6 +95,7 @@ export default function Trash() {
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/trash/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -113,6 +126,7 @@ export default function Trash() {
     mutationFn: async () => {
       const response = await fetch('/api/trash', {
         method: 'DELETE',
+        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -237,9 +251,12 @@ export default function Trash() {
         <div className="text-center py-12">
           <Trash2 className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-2xl font-semibold mb-2">Корзина пуста</h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             Удаленные промпты будут отображаться здесь в течение 7 дней, после чего они будут автоматически удалены.
           </p>
+          <Button onClick={() => setLocation('/')} className="bg-orange hover:bg-orange/80 text-white">
+            Вернуться на главную
+          </Button>
         </div>
       ) : (
         <>
