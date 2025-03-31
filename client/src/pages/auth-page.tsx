@@ -22,12 +22,7 @@ const registerSchema = z.object({
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
-
-  // Редирект на главную, если пользователь уже авторизован
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
+  
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -43,6 +38,12 @@ export default function AuthPage() {
       password: "",
     },
   });
+
+  // Редирект на главную, если пользователь уже авторизован
+  // ВАЖНО: этот блок должен идти после всех хуков
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   function onLoginSubmit(values: z.infer<typeof loginSchema>) {
     loginMutation.mutate(values, {
