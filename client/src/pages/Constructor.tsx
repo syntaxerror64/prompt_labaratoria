@@ -171,7 +171,14 @@ export default function Constructor() {
             </button>
             <h1 className="text-2xl font-bold text-orange">Конструктор промптов</h1>
           </div>
-          <div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/'}
+              className="border-orange text-orange hover:text-orange hover:bg-orange/10"
+            >
+              Вернуться на главную
+            </Button>
             {selectedPrompts.length > 0 && (
               <Button
                 className="bg-orange hover:bg-orange/80 text-white"

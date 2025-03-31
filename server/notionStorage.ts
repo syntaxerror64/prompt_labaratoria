@@ -152,14 +152,116 @@ export class NotionStorage implements IStorage {
   async getPrompts(): Promise<Prompt[]> {
     try {
       // Запрос без сортировки, так как поле может не существовать
+      // Фильтруем только основные промпты, а не их части
       const response = await this.notionClient.databases.query({
-        database_id: this.databaseId
+        database_id: this.databaseId,
+        filter: {
+          or: [
+            {
+              property: "parentPromptId",
+              rich_text: {
+                is_empty: true
+              }
+            },
+            {
+              property: "parentPromptId",
+              rich_text: {
+                does_not_contain: "-"
+              }
+            }
+          ]
+        }
       });
 
-      return response.results.map((page: any) => this.mapNotionPageToPrompt(page));
+      const prompts = await Promise.all(response.results.map(async (page: any) => {
+        const prompt = this.mapNotionPageToPrompt(page);
+        
+        // Если у промпта есть части, загружаем и объединяем их
+        if (prompt) {
+          const fullPrompt = await this.getFullPromptContent(prompt);
+          return fullPrompt;
+        }
+        
+        return prompt;
+      }));
+
+      return prompts.filter(p => p !== undefined) as Prompt[];
     } catch (error) {
       console.error('Error fetching prompts from Notion:', error);
       return [];
+    }
+  }
+  
+  // Метод для загрузки и объединения всех частей промпта
+  private async getFullPromptContent(prompt: Prompt): Promise<Prompt> {
+    try {
+      const notionUuid = this.idMapping.get(prompt.id);
+      if (!notionUuid) {
+        return prompt;
+      }
+      
+      // Получаем все части промпта
+      const partsResponse = await this.notionClient.databases.query({
+        database_id: this.databaseId,
+        filter: {
+          property: "parentPromptId",
+          rich_text: {
+            equals: notionUuid
+          }
+        },
+        sorts: [
+          {
+            property: "partIndex",
+            direction: "ascending"
+          }
+        ]
+      });
+
+      // Если частей нет, возвращаем промпт как есть
+      if (partsResponse.results.length === 0) {
+        return prompt;
+      }
+
+      // Извлекаем содержимое из каждой части
+      const contentParts: string[] = [];
+      for (const part of partsResponse.results) {
+        try {
+          const properties = part.properties;
+          if (properties.content && properties.content.rich_text) {
+            const contentTexts = properties.content.rich_text
+              .filter((t: any) => t && t.text && t.text.content)
+              .map((t: any) => t.text.content);
+            
+            if (contentTexts.length > 0) {
+              contentParts.push(contentTexts.join(''));
+            }
+          }
+        } catch (err) {
+          console.error('Error extracting content from part:', err);
+        }
+      }
+
+      // Объединяем все части в полный текст промпта
+      // Удаляем многоточие в конце основного текста, если оно есть
+      let fullContent = prompt.content;
+      if (fullContent.endsWith('...')) {
+        fullContent = fullContent.slice(0, -3);
+      }
+      
+      // Добавляем содержимое всех частей
+      fullContent += contentParts.join('');
+      
+      // Сохраняем части в кэш для будущих запросов
+      this.contentPartStorage.set(prompt.id, contentParts);
+      
+      // Возвращаем промпт с полным текстом
+      return {
+        ...prompt,
+        content: fullContent
+      };
+    } catch (error) {
+      console.error(`Error loading full content for prompt ${prompt.id}:`, error);
+      return prompt;
     }
   }
 
@@ -178,7 +280,14 @@ export class NotionStorage implements IStorage {
         page_id: notionUuid
       });
 
-      return this.mapNotionPageToPrompt(response as any);
+      const prompt = this.mapNotionPageToPrompt(response as any);
+      
+      // Если промпт найден, объединяем его части
+      if (prompt) {
+        return await this.getFullPromptContent(prompt);
+      }
+      
+      return prompt;
     } catch (error) {
       console.error(`Error fetching prompt ${id} from Notion:`, error);
       return undefined;
