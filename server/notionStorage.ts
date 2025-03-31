@@ -135,12 +135,17 @@ export class NotionStorage implements IStorage {
 
   async getPrompt(id: number): Promise<Prompt | undefined> {
     try {
-      // Преобразуем ID в строковый формат Notion
-      const pageId = id.toString();
+      // Получаем UUID Notion из маппинга
+      const notionUuid = this.idMapping.get(id);
       
-      // Получаем страницу по ID
+      if (!notionUuid) {
+        console.error(`No Notion UUID found for numeric ID ${id}`);
+        return undefined;
+      }
+      
+      // Получаем страницу по UUID
       const response = await this.notionClient.pages.retrieve({
-        page_id: pageId
+        page_id: notionUuid
       });
 
       return this.mapNotionPageToPrompt(response as any);
@@ -174,12 +179,18 @@ export class NotionStorage implements IStorage {
         }
       });
 
-      // Преобразуем ID из Notion в числовой для совместимости
-      const id = parseInt(response.id.replace(/-/g, '').substring(0, 8), 16);
+      // Получаем UUID страницы Notion
+      const notionUuid = response.id;
+      
+      // Создаем новый числовой ID
+      const numericId = this.nextId++;
+      
+      // Добавляем маппинг
+      this.idMapping.set(numericId, notionUuid);
       
       // Возвращаем созданный промпт в формате нашего приложения
       return {
-        id,
+        id: numericId,
         title: prompt.title,
         content: prompt.content,
         category: prompt.category,
@@ -194,6 +205,14 @@ export class NotionStorage implements IStorage {
 
   async updatePrompt(id: number, promptData: Partial<InsertPrompt>): Promise<Prompt | undefined> {
     try {
+      // Получаем UUID Notion из маппинга
+      const notionUuid = this.idMapping.get(id);
+      
+      if (!notionUuid) {
+        console.error(`No Notion UUID found for numeric ID ${id}`);
+        return undefined;
+      }
+      
       // Получаем текущий промпт
       const existingPrompt = await this.getPrompt(id);
       if (!existingPrompt) {
@@ -229,7 +248,7 @@ export class NotionStorage implements IStorage {
 
       // Отправляем обновление в Notion
       await this.notionClient.pages.update({
-        page_id: id.toString(),
+        page_id: notionUuid,
         properties
       });
 
@@ -246,11 +265,22 @@ export class NotionStorage implements IStorage {
 
   async deletePrompt(id: number): Promise<boolean> {
     try {
+      // Получаем UUID Notion из маппинга
+      const notionUuid = this.idMapping.get(id);
+      
+      if (!notionUuid) {
+        console.error(`No Notion UUID found for numeric ID ${id}`);
+        return false;
+      }
+      
       // В Notion API нет прямого удаления, поэтому архивируем страницу
       await this.notionClient.pages.update({
-        page_id: id.toString(),
+        page_id: notionUuid,
         archived: true
       });
+      
+      // Удаляем из маппинга
+      this.idMapping.delete(id);
       
       return true;
     } catch (error) {
@@ -259,12 +289,32 @@ export class NotionStorage implements IStorage {
     }
   }
 
+  // Приватное поле для хранения маппинга между числовыми ID и UUID Notion
+  private idMapping: Map<number, string> = new Map();
+  private nextId: number = 1;
+
   // Вспомогательный метод для преобразования страницы Notion в формат нашего приложения
   private mapNotionPageToPrompt(notionPage: any): Prompt {
     const properties = notionPage.properties;
     
-    // Получаем ID и преобразуем его в числовой формат для совместимости
-    const id = parseInt(notionPage.id.replace(/-/g, '').substring(0, 8), 16);
+    // Получаем UUID страницы Notion
+    const notionUuid = notionPage.id;
+    
+    // Сначала проверяем, есть ли уже маппинг для этого UUID
+    let numericId = -1;
+    
+    // Ищем среди существующих маппингов
+    this.idMapping.forEach((uuid, id) => {
+      if (uuid === notionUuid) {
+        numericId = id;
+      }
+    });
+    
+    // Если маппинг не найден, создаем новый
+    if (numericId === -1) {
+      numericId = this.nextId++;
+      this.idMapping.set(numericId, notionUuid);
+    }
     
     // Получаем заголовок (это поле всегда есть в Notion)
     const title = properties.title?.title?.map((t: any) => t.plain_text).join('') || 'Untitled';
@@ -283,7 +333,7 @@ export class NotionStorage implements IStorage {
     const createdAt = createdAtStr ? new Date(createdAtStr) : new Date();
     
     return {
-      id,
+      id: numericId,
       title,
       content,
       category,
