@@ -150,6 +150,15 @@ export default function Sidebar({
             </li>
             <li className="mb-1">
               <button
+                onClick={goToSettings}
+                className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-accent/50 dark:hover:bg-accent/40"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Настройки</span>
+              </button>
+            </li>
+            <li className="mb-1">
+              <button
                 onClick={goToStats}
                 className="w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center hover:bg-accent/50 dark:hover:bg-accent/40"
               >
@@ -188,13 +197,16 @@ export default function Sidebar({
         </nav>
         
         {/* Add New Prompt Button */}
-        <Button 
-          onClick={onAddPrompt}
-          className="mt-4 bg-orange hover:bg-orange/80 text-white flex items-center justify-center transition-colors"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          <span>Добавить промпт</span>
-        </Button>
+        <div className="flex items-center justify-between mt-4">
+          <ThemeToggle />
+          <Button 
+            onClick={onAddPrompt}
+            className="bg-orange hover:bg-orange/80 text-white flex items-center justify-center transition-colors"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            <span>Добавить промпт</span>
+          </Button>
+        </div>
       </div>
     </div>
   );
