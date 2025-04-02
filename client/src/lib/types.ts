@@ -6,7 +6,8 @@ export type Category =
   | "academic"
   | "business"
   | "technical"
-  | "other";
+  | "other"
+  | "short_prompt";
 
 export type CategoryInfo = {
   id: Category;
