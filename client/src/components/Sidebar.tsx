@@ -4,20 +4,20 @@ import { LucideIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { Separator } from "@/components/ui/separator";
 import ThemeToggle from "@/components/ThemeToggle";
-import { 
-  Globe, 
-  Paintbrush, 
-  GraduationCap, 
-  Briefcase, 
-  Code, 
-  MoreHorizontal, 
-  Plus, 
+import {
+  Globe,
+  Paintbrush,
+  GraduationCap,
+  Briefcase,
+  Code,
+  MoreHorizontal,
+  Plus,
   X,
   Settings,
   BarChart2,
   LogOut,
   Trash2,
-  Wrench
+  Wrench,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -31,12 +31,12 @@ interface SidebarProps {
 }
 
 const iconMap: Record<string, LucideIcon> = {
-  "globe": Globe,
+  globe: Globe,
   "paint-brush": Paintbrush,
   "graduation-cap": GraduationCap,
-  "briefcase": Briefcase,
-  "code": Code,
-  "ellipsis-h": MoreHorizontal
+  briefcase: Briefcase,
+  code: Code,
+  "ellipsis-h": MoreHorizontal,
 };
 
 export default function Sidebar({
@@ -46,7 +46,7 @@ export default function Sidebar({
   setCategory,
   popularTags,
   onTagClick,
-  onAddPrompt
+  onAddPrompt,
 }: SidebarProps) {
   const [, setLocation] = useLocation();
   const sidebarClass = `bg-card dark:bg-card border-r border-border shadow-lg w-64 h-full flex-shrink-0 fixed md:static z-10 transition-transform duration-300 ease-in-out sidebar-scrollbar overflow-y-auto ${
@@ -68,12 +68,12 @@ export default function Sidebar({
   const goToStats = () => {
     setLocation("/stats");
   };
-  
+
   // Переход на страницу корзины
   const goToTrash = () => {
     setLocation("/trash");
   };
-  
+
   // Переход на страницу конструктора
   const goToConstructor = () => {
     setLocation("/constructor");
@@ -85,16 +85,21 @@ export default function Sidebar({
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-brown dark:text-gold flex items-center">
             <span className="mr-2">💬</span>
-            <span>ПромптМастер</span>
+            <span>ПромптЛаб</span>
           </h1>
-          <button onClick={toggleSidebar} className="md:hidden text-muted-foreground hover:text-foreground">
+          <button
+            onClick={toggleSidebar}
+            className="md:hidden text-muted-foreground hover:text-foreground"
+          >
             <X size={20} />
           </button>
         </div>
-        
+
         {/* Categories Navigation */}
         <nav className="mb-6">
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Категории</h2>
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
+            промпт Категории
+          </h2>
           <ul>
             {CATEGORIES.map((category) => {
               const IconComponent = iconMap[category.icon];
@@ -116,10 +121,12 @@ export default function Sidebar({
             })}
           </ul>
         </nav>
-        
+
         {/* Popular Tags */}
         <div className="mb-6">
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Популярные теги</h2>
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
+            Популярные теги
+          </h2>
           <div className="flex flex-wrap gap-2">
             {popularTags.map((tag) => (
               <button
@@ -137,7 +144,9 @@ export default function Sidebar({
 
         {/* Navigation Links */}
         <nav className="mb-auto">
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Навигация</h2>
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
+            Навигация
+          </h2>
           <ul>
             <li className="mb-1">
               <button
@@ -195,11 +204,11 @@ export default function Sidebar({
             </li>
           </ul>
         </nav>
-        
+
         {/* Add New Prompt Button */}
         <div className="flex items-center justify-between mt-4">
           <ThemeToggle />
-          <Button 
+          <Button
             onClick={onAddPrompt}
             className="bg-orange hover:bg-orange/80 text-white flex items-center justify-center transition-colors"
           >
